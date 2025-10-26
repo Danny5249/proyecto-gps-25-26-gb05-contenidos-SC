@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule } from '@nestjs/config';
 import { GenresModule } from './modules/genres/genres.module';
 import { SongsModule } from './modules/songs/songs.module';
+import { AlbumsModule } from './modules/albums/albums.module';
 
 @Module({
 	imports: [
@@ -10,6 +11,7 @@ import { SongsModule } from './modules/songs/songs.module';
 		MongooseModule.forRoot(process.env.MONGODB_HOST || ''),
 		GenresModule,
 		SongsModule,
+		AlbumsModule,
 	],
 })
 export class AppModule {}
