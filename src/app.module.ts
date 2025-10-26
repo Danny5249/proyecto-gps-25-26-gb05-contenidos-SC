@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { GenresModule } from './modules/genres/genres.module';
 import { SongsModule } from './modules/songs/songs.module';
 import { AlbumsModule } from './modules/albums/albums.module';
+import { ArtistsModule } from './modules/artists/artists.module';
 
 @Module({
 	imports: [
@@ -12,6 +13,7 @@ import { AlbumsModule } from './modules/albums/albums.module';
 		GenresModule,
 		SongsModule,
 		AlbumsModule,
+		ArtistsModule,
 	],
 })
 export class AppModule {}
