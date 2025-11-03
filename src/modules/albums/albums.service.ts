@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+	Injectable,
+	InternalServerErrorException,
+	NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Album } from './schemas/album.schema';
 import { Model } from 'mongoose';
@@ -10,4 +14,23 @@ export class AlbumsService {
 	constructor(@InjectModel(Album.name) private albumModel: Model<Album>) {}
 
 	// TODO: Definir lógica de negocio de albums/
+	async findAll(): Promise<Album[]> {
+		return await this.albumModel.find().exec();
+	}
+
+	async findOneById(id: string): Promise<Album> {
+		const album = await this.albumModel.findById(id);
+		if (!album) throw new NotFoundException();
+		return album;
+	}
+
+	async create(createAlbumDto: CreateAlbumDto): Promise<Album> {
+		const createdAlbum = new this.albumModel(createAlbumDto);
+
+		try {
+			return await createdAlbum.save();
+		} catch (error) {
+			throw new InternalServerErrorException();
+		}
+	}
 }
