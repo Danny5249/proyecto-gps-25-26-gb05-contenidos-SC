@@ -13,7 +13,6 @@ import { UpdateSongDto } from './dto/update-song.dto';
 export class SongsService {
 	constructor(@InjectModel(Song.name) private songModel: Model<Song>) {}
 
-	// TODO: Definir lógica de negocio de songs/
 	async findAll(): Promise<Song[]> {
 		return await this.songModel.find().exec();
 	}

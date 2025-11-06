@@ -1,9 +1,29 @@
+import { IsDecimal, IsNotEmpty, IsNumber } from 'class-validator';
+
 export type PricingType = {
 	cd: number;
 	vinyl: number;
 	cassette: number;
 	digital: number;
 };
+
+export class Pricing implements PricingType {
+	@IsNotEmpty()
+	@IsNumber({ maxDecimalPlaces: 2 })
+	cd: number;
+
+	@IsNotEmpty()
+	@IsNumber({ maxDecimalPlaces: 2 })
+	vinyl: number;
+
+	@IsNotEmpty()
+	@IsNumber({ maxDecimalPlaces: 2 })
+	cassette: number;
+
+	@IsNotEmpty()
+	@IsNumber({ maxDecimalPlaces: 2 })
+	digital: number;
+}
 
 export const PricingSchema = {
 	cd: { type: Number, required: true, min: 0 },

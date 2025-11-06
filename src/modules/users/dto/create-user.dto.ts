@@ -1,3 +1,9 @@
+import { IsEmpty, IsNotEmpty } from 'class-validator';
+
 export class CreateUserDto {
-	// TODO: Definir CreateUserDto
+	@IsNotEmpty()
+	uuid: string;
+
+	@IsNotEmpty()
+	username: string;
 }

@@ -9,5 +9,12 @@ import { UpdateUserDto } from './dto/update-user.dto';
 export class UsersService {
 	constructor(@InjectModel(User.name) private userModel: Model<User>) {}
 
-	// TODO: Definir lógica de negocio de users/
+	async create(createUserDto: CreateUserDto): Promise<User> {
+		const user = new this.userModel(createUserDto);
+		return await user.save();
+	}
+
+	async delete(uuid: string) {
+		await this.userModel.deleteOne({ uuid });
+	}
 }
