@@ -13,6 +13,8 @@ export type ArtistDocument = HydratedDocument<Artist>;
 	},
 })
 export class Artist {
+	_id: string;
+
 	@Prop({ unique: true })
 	uuid: string;
 

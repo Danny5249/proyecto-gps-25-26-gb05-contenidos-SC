@@ -17,8 +17,8 @@ export class SongsService {
 		return await this.songModel.find().exec();
 	}
 
-	async findOne(id: string): Promise<Song> {
-		const song = await this.songModel.findById(id);
+	async findOneByUuid(uuid: string): Promise<Song> {
+		const song = await this.songModel.findOne({ uuid });
 		if (!song) throw new NotFoundException();
 		return song;
 	}

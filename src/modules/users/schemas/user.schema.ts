@@ -16,6 +16,8 @@ export type UserDocument = HydratedDocument<User>;
 	},
 })
 export class User {
+	_id: string;
+
 	@Prop({ unique: true })
 	uuid: string;
 
@@ -25,11 +27,11 @@ export class User {
 	@Prop()
 	profileImg: string;
 
-	@Prop({ type: Types.ObjectId, ref: 'Playlist' })
-	playlists: Playlist[];
+	@Prop({ type: [Types.ObjectId], ref: 'Playlist' })
+	playlists: Playlist[] | string[];
 
-	@Prop({ type: Types.ObjectId, ref: 'Artist' })
-	following: Artist[];
+	@Prop({ type: [Types.ObjectId], ref: 'Artist' })
+	following: Artist[] | string[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

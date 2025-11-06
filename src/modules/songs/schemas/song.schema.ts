@@ -19,7 +19,9 @@ export type SongDocument = HydratedDocument<Song>;
 	},
 })
 export class Song {
-	@Prop({ default: uuidv4() })
+	_id: string;
+
+	@Prop({ default: () => uuidv4() })
 	uuid: string;
 
 	@Prop()
@@ -29,9 +31,9 @@ export class Song {
 	releaseDate: Date;
 
 	@Prop({ type: [Types.ObjectId], ref: 'Artist' })
-	authors: Artist[];
+	authors: Artist[] | string[];
 
-	@Prop()
+	@Prop({ default: '' })
 	cover: string;
 
 	@Prop()

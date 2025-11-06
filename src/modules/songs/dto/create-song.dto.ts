@@ -23,8 +23,11 @@ export class CreateSongDto {
 	pricing: PricingType;
 
 	@IsEmpty()
-	duration: number;
+	cover: string;
 
 	@IsEmpty()
+	duration: number;
+
+	@IsEmpty() // TEMPORAL
 	authors: string[];
 }

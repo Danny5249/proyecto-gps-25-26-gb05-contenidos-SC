@@ -17,20 +17,30 @@ export class BucketService {
 		});
 	}
 
-	async saveToSongFiles(id: string, file: Express.Multer.File) {
+	async saveToSongFiles(uuid: string, file: Express.Multer.File) {
 		const command = new PutObjectCommand({
 			Bucket: 'song-files',
-			Key: id,
+			Key: uuid,
 			Body: file.buffer,
 			ContentType: file.mimetype,
 		});
 		await this.s3.send(command);
 	}
 
-	async saveToSongCovers(id: string, cover: Express.Multer.File) {
+	async saveToSongCovers(uuid: string, cover: Express.Multer.File) {
 		const command = new PutObjectCommand({
 			Bucket: 'song-covers',
-			Key: id,
+			Key: uuid,
+			Body: cover.buffer,
+			ContentType: cover.mimetype,
+		});
+		await this.s3.send(command);
+	}
+
+	async saveToAlbumCovers(uuid: string, cover: Express.Multer.File) {
+		const command = new PutObjectCommand({
+			Bucket: 'album-covers',
+			Key: uuid,
 			Body: cover.buffer,
 			ContentType: cover.mimetype,
 		});

@@ -14,5 +14,6 @@ import { BucketService } from '../../common/services/bucket.service';
 	],
 	controllers: [SongsController],
 	providers: [SongsService, ServiceTokenProvider, BucketService],
+	exports: [SongsService],
 })
 export class SongsModule {}
