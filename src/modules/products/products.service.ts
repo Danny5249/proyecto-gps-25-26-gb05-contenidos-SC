@@ -9,5 +9,13 @@ import { UpdateProductDto } from './dto/update-product.dto';
 export class ProductsService {
 	constructor(@InjectModel(Product.name) private productModel: Model<Product>) {}
 
-	// TODO: Definir lógica de negocio de products/
+	async findAll(): Promise<Product[]> {
+		return await this.productModel.find().exec();
+	}
+
+	async findOneByUuid(uuid: string): Promise<Product> {
+		const product = await this.productModel.findOne({ uuid });
+		if (!product) throw new NotFoundException();
+		return product;
+	}
 }
