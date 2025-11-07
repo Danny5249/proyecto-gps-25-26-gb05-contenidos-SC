@@ -1,3 +1,6 @@
+import { IsNotEmpty } from 'class-validator';
+
 export class CreateArtistDto {
-	// TODO: Definir CreateArtistDto
+	@IsNotEmpty()
+	uuid: string;
 }

@@ -1,51 +1,56 @@
 import {
-    Body,
-    Controller,
-    HttpCode,
-    HttpStatus, Param, Patch,
-    Post, Req,
-    UseGuards,
+	Body,
+	Controller,
+	Delete,
+	Get,
+	HttpCode,
+	HttpStatus,
+	Param,
+	Post,
+	Put,
+	UseGuards,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-
-import { User } from './schemas/user.schema'
+import { Roles } from '../../auth/roles.decorator';
 import { AuthGuard } from '../../auth/auth.guard';
+import { User } from './schemas/user.schema';
 import { SupabaseUser } from '../../auth/user.decorator';
 import { type User as SbUser } from '@supabase/supabase-js';
 
 @Controller('users')
 export class UsersController {
-    constructor(private readonly usersService: UsersService) {}
+	constructor(private readonly usersService: UsersService) {}
 
-    @UseGuards(AuthGuard)
-    @Post()
-    @HttpCode(HttpStatus.CREATED)
-    async postUser(
-        @Body() createUserDto: CreateUserDto,
-        @SupabaseUser() sbUser: SbUser,
-    ): Promise<User> {
-        try {
-            return await this.usersService.findOneById(sbUser.id);
-        } catch (error) {
-            return await this.usersService.insert({ ...createUserDto, id: sbUser.id });
-        }
-    }
+	@Post()
+	@Roles(['admin'])
+	@UseGuards(AuthGuard)
+	@HttpCode(HttpStatus.CREATED)
+	async postUser(@Body() createUserDto: CreateUserDto) {
+		return await this.usersService.create(createUserDto);
+	}
 
-    @UseGuards(AuthGuard)
-    @Patch(':id')
-    @HttpCode(HttpStatus.OK)
-    async updateUser(
-        @Param('id') id: string,
-        @Body() updateUserDto: UpdateUserDto,
-        @SupabaseUser() sbUser: SbUser,
-    ): Promise<User> {
-        if (sbUser.id !== id) {
-            throw new Error('No tienes permiso para modificar este usuario');
-        }
+	@Delete(':uuid')
+	@Roles(['admin'])
+	@UseGuards(AuthGuard)
+	@HttpCode(HttpStatus.OK)
+	async deleteUserByUuid(@Param('uuid') uuid: string) {
+		return await this.usersService.delete(uuid);
+	}
 
-        return this.usersService.updateUser(id, updateUserDto);
-    }
+	@UseGuards(AuthGuard)
+	@Put(':id')
+	@HttpCode(HttpStatus.OK)
+	async updateUser(
+		@Param('id') id: string,
+		@Body() updateUserDto: UpdateUserDto,
+		@SupabaseUser() sbUser: SbUser,
+	): Promise<User> {
+		if (sbUser.id !== id) {
+			throw new Error('No tienes permiso para modificar este usuario');
+		}
 
+		return this.usersService.updateUser(id, updateUserDto);
+	}
 }

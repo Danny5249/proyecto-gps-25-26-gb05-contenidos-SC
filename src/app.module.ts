@@ -5,6 +5,9 @@ import { GenresModule } from './modules/genres/genres.module';
 import { SongsModule } from './modules/songs/songs.module';
 import { AlbumsModule } from './modules/albums/albums.module';
 import { ArtistsModule } from './modules/artists/artists.module';
+import { UsersModule } from './modules/users/users.module';
+import { PlaylistsModule } from './modules/playlists/playlists.module';
+import { ProductsModule } from './modules/products/products.module';
 
 @Module({
 	imports: [
@@ -14,6 +17,9 @@ import { ArtistsModule } from './modules/artists/artists.module';
 		SongsModule,
 		AlbumsModule,
 		ArtistsModule,
+		UsersModule,
+		PlaylistsModule,
+		ProductsModule,
 	],
 })
 export class AppModule {}
