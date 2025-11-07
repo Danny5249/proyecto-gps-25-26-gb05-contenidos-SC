@@ -16,22 +16,22 @@ export type UserDocument = HydratedDocument<User>;
 	},
 })
 export class User {
-	_id: string;
+	_id: Types.ObjectId;
 
-	@Prop({ unique: true })
+	@Prop({ unique: true, required: true })
 	uuid: string;
 
-	@Prop({ unique: true })
+	@Prop({ unique: true, required: true })
 	username: string;
 
-	@Prop()
+	@Prop({ default: '' })
 	profileImg: string;
 
 	@Prop({ type: [Types.ObjectId], ref: 'Playlist' })
-	playlists: Playlist[] | string[];
+	playlists: Playlist[] | Types.ObjectId[];
 
 	@Prop({ type: [Types.ObjectId], ref: 'Artist' })
-	following: Artist[] | string[];
+	following: Artist[] | Types.ObjectId[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

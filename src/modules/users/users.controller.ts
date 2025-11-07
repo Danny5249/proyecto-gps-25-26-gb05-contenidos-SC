@@ -15,6 +15,9 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Roles } from '../../auth/roles.decorator';
 import { AuthGuard } from '../../auth/auth.guard';
+import { User } from './schemas/user.schema';
+import { SupabaseUser } from '../../auth/user.decorator';
+import { type User as SbUser } from '@supabase/supabase-js';
 
 @Controller('users')
 export class UsersController {
@@ -34,5 +37,20 @@ export class UsersController {
 	@HttpCode(HttpStatus.OK)
 	async deleteUserByUuid(@Param('uuid') uuid: string) {
 		return await this.usersService.delete(uuid);
+	}
+
+	@UseGuards(AuthGuard)
+	@Put(':id')
+	@HttpCode(HttpStatus.OK)
+	async updateUser(
+		@Param('id') id: string,
+		@Body() updateUserDto: UpdateUserDto,
+		@SupabaseUser() sbUser: SbUser,
+	): Promise<User> {
+		if (sbUser.id !== id) {
+			throw new Error('No tienes permiso para modificar este usuario');
+		}
+
+		return this.usersService.updateUser(id, updateUserDto);
 	}
 }

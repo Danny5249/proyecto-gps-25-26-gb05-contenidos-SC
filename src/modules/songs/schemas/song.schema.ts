@@ -19,27 +19,30 @@ export type SongDocument = HydratedDocument<Song>;
 	},
 })
 export class Song {
-	_id: string;
+	_id: Types.ObjectId;
 
 	@Prop({ default: () => uuidv4() })
 	uuid: string;
 
-	@Prop()
+	@Prop({ required: true })
 	title: string;
 
 	@Prop({ default: Date.now() })
 	releaseDate: Date;
 
-	@Prop({ type: [Types.ObjectId], ref: 'Artist' })
-	authors: Artist[] | string[];
+    @Prop({ type: Types.ObjectId, ref: 'Artist', required: true })
+    author: Artist | Types.ObjectId;
+
+	@Prop({ type: [Types.ObjectId], ref: 'Artist', required: true })
+	featuring: Artist[] | Types.ObjectId[];
 
 	@Prop({ default: '' })
 	cover: string;
 
-	@Prop()
+	@Prop({ required: true })
 	duration: number;
 
-	@Prop({ type: Pricing })
+	@Prop({ type: Pricing, required: true })
 	pricing: PricingType;
 }
 

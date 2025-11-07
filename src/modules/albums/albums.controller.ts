@@ -63,6 +63,17 @@ export class AlbumsController {
 
 		await this.bucketService.saveToAlbumCovers(album.uuid, cover);
 
-		return await this.albumsService.findOneByUuidAndPopulate(album.uuid);
+		return album;
+	}
+
+	@Put(':uuid')
+	@Roles(['artist'])
+	@UseGuards(AuthGuard)
+	@HttpCode(HttpStatus.OK)
+	async update(
+		@Param('uuid') uuid: string,
+		@Body() updateAlbumDto: UpdateAlbumDto,
+	): Promise<Album> {
+		return await this.albumsService.update(uuid, updateAlbumDto);
 	}
 }

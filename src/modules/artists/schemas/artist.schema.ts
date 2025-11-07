@@ -1,4 +1,4 @@
-import { HydratedDocument } from 'mongoose';
+import {HydratedDocument, Types} from 'mongoose';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
 export type ArtistDocument = HydratedDocument<Artist>;
@@ -13,9 +13,9 @@ export type ArtistDocument = HydratedDocument<Artist>;
 	},
 })
 export class Artist {
-	_id: string;
+	_id: Types.ObjectId;
 
-	@Prop({ unique: true })
+	@Prop({ unique: true, required: true })
 	uuid: string;
 
 	@Prop({ default: 'Artista' })

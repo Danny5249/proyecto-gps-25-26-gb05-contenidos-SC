@@ -20,30 +20,30 @@ export type AlbumDocument = HydratedDocument<Album>;
 	},
 })
 export class Album {
-	_id: string;
+	_id: Types.ObjectId;
 
 	@Prop({ default: () => uuidv4() })
 	uuid: string;
 
-	@Prop()
+	@Prop({ required: true })
 	title: string;
 
 	@Prop({ default: Date.now() })
 	releaseDate: Date;
 
-	@Prop({ type: Types.ObjectId, ref: 'Artist' })
-	author: Artist | string;
+	@Prop({ type: Types.ObjectId, ref: 'Artist', required: true })
+	author: Artist | Types.ObjectId;
 
 	@Prop({ default: '' })
 	cover: string;
 
-	@Prop()
+	@Prop({ required: true })
 	duration: number;
 
-	@Prop({ type: [Types.ObjectId], ref: 'Song' })
-	songs: Song[] | string[];
+	@Prop({ type: [Types.ObjectId], ref: 'Song', required: true })
+	songs: Song[] | Types.ObjectId[];
 
-	@Prop({ type: Pricing })
+	@Prop({ type: Pricing, required: true })
 	pricing: PricingType;
 }
 
