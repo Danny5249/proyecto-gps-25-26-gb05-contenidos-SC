@@ -1,4 +1,6 @@
-import { PartialType } from '@nestjs/mapped-types';
+import { OmitType, PartialType } from '@nestjs/mapped-types';
 import { CreateSongDto } from './create-song.dto';
 
-export class UpdateSongDto extends PartialType(CreateSongDto) {}
+const OmittedAttributes = OmitType(CreateSongDto, ['uuid'] as const);
+
+export class UpdateSongDto extends PartialType(OmittedAttributes) {}
