@@ -5,6 +5,7 @@ import {
 	Delete,
 	FileTypeValidator,
 	Get,
+	NotFoundException,
 	HttpCode,
 	HttpStatus,
 	MaxFileSizeValidator,
@@ -43,6 +44,11 @@ export class SongsController {
 		private readonly songsService: SongsService,
 		private readonly bucketService: BucketService,
 	) {}
+
+	@Get(':uuid')
+	async getSongByUuid(@Param('uuid') uuid: string): Promise<Song> {
+		return await this.songsService.findOneByUuidAndPopulate(uuid);
+	}
 
 	@Post()
 	@UseInterceptors(

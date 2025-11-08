@@ -33,6 +33,11 @@ export class AlbumsController {
 		private readonly bucketService: BucketService,
 	) {}
 
+	@Get(':id')
+	async getAlbumByUuid(@Param('id') id: string): Promise<Album> {
+		return await this.albumsService.findOneByUuidAndPopulate(id);
+	}
+
 	@Post()
 	@UseInterceptors(FileInterceptor('cover'))
 	@Roles(['artist'])
