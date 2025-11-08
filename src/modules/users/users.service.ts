@@ -36,9 +36,9 @@ export class UsersService {
 		return await this.userModel.create(insertedUser);
 	}
 
-    async delete(uuid: string) {
-        await this.userModel.deleteOne({ uuid });
-    }
+	async delete(uuid: string) {
+		await this.userModel.deleteOne({ uuid });
+	}
 
 	async remove(id: string): Promise<void> {
 		await this.userModel.findByIdAndDelete(id);

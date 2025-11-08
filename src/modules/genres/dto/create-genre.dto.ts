@@ -1,3 +1,10 @@
+import { IsEmpty, IsNotEmpty, IsString } from 'class-validator';
+
 export class CreateGenreDto {
-	// TODO: Definir CreateGenreDto
+	@IsEmpty()
+	uuid: string;
+
+	@IsNotEmpty()
+	@IsString()
+	name: string;
 }

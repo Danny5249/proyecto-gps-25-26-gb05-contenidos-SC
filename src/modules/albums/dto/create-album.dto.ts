@@ -1,4 +1,5 @@
 import {
+	ArrayUnique,
 	IsArray,
 	IsDataURI,
 	IsEmpty,
@@ -39,6 +40,7 @@ export class CreateAlbumDto {
 		return value;
 	})
 	@IsArray()
+	@ArrayUnique()
 	@IsString({ each: true })
 	@IsNotEmpty({ each: true })
 	songs: string[];
