@@ -6,6 +6,7 @@ import {
 	Pricing,
 	type PricingType,
 } from '../../../common/schemas/pricing.schema';
+import { Genre } from '../../genres/schemas/genre.schema';
 
 export type SongDocument = HydratedDocument<Song>;
 
@@ -35,6 +36,9 @@ export class Song {
 
 	@Prop({ type: [Types.ObjectId], ref: 'Artist', required: true })
 	featuring: Artist[] | Types.ObjectId[];
+
+	@Prop({ type: [Types.ObjectId], ref: 'Genre', required: true, minlength: 1 })
+	genres: Genre[] | Types.ObjectId[];
 
 	@Prop({ default: '' })
 	cover: string;

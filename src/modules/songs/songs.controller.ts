@@ -32,6 +32,8 @@ import { BucketService } from '../../common/services/bucket.service';
 import { parseBuffer } from 'music-metadata';
 import { type User as SbUser } from '@supabase/supabase-js';
 import { SupabaseUser } from '../../auth/user.decorator';
+import { UpdateAlbumDto } from '../albums/dto/update-album.dto';
+import { Album } from '../albums/schemas/album.schema';
 
 const validSongFormats = ['audio/mpeg', 'audio/flac'];
 const validCoverFormats = ['image/jpg', 'image/jpeg', 'image/png'];
@@ -43,9 +45,9 @@ export class SongsController {
 		private readonly bucketService: BucketService,
 	) {}
 
-	@Get(':id')
-	async getSongByUuid(@Param('id') id: string): Promise<Song> {
-		return await this.songsService.findOneByUuidAndPopulate(id);
+	@Get(':uuid')
+	async getSongByUuid(@Param('uuid') uuid: string): Promise<Song> {
+		return await this.songsService.findOneByUuidAndPopulate(uuid);
 	}
 
 	@Post()

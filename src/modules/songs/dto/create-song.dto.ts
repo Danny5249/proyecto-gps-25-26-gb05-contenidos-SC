@@ -1,4 +1,5 @@
 import {
+	ArrayUnique,
 	IsArray,
 	IsEmpty,
 	IsNotEmpty,
@@ -42,8 +43,20 @@ export class CreateSongDto {
 		return value;
 	})
 	@IsArray()
+	@ArrayUnique()
 	@IsString({ each: true })
 	featuring: string[];
+
+	@Transform(({ value }) => {
+		if (typeof value === 'string') {
+			return JSON.parse(value);
+		}
+		return value;
+	})
+	@IsArray()
+	@ArrayUnique()
+	@IsString({ each: true })
+	genres: string[];
 
 	@IsEmpty()
 	author: string;

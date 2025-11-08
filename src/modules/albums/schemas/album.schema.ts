@@ -7,6 +7,7 @@ import {
 	type PricingType,
 } from '../../../common/schemas/pricing.schema';
 import { v4 as uuidv4 } from 'uuid';
+import { Genre } from '../../genres/schemas/genre.schema';
 
 export type AlbumDocument = HydratedDocument<Album>;
 
@@ -42,6 +43,9 @@ export class Album {
 
 	@Prop({ type: [Types.ObjectId], ref: 'Song', required: true })
 	songs: Song[] | Types.ObjectId[];
+
+	@Prop({ type: [Types.ObjectId], ref: 'Genre', required: true, minlength: 1 })
+	genres: Genre[] | Types.ObjectId[];
 
 	@Prop({ type: Pricing, required: true })
 	pricing: PricingType;

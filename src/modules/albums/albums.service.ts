@@ -11,6 +11,8 @@ import { CreateAlbumDto } from './dto/create-album.dto';
 import { UpdateAlbumDto } from './dto/update-album.dto';
 import { SongsService } from '../songs/songs.service';
 import { ArtistsService } from '../artists/artists.service';
+import { ElasticsearchSyncService } from '../../common/services/elasticsearch-sync.service';
+import { GenresService } from '../genres/genres.service';
 
 @Injectable()
 export class AlbumsService {
@@ -18,6 +20,8 @@ export class AlbumsService {
 		@InjectModel(Album.name) private albumModel: Model<Album>,
 		private readonly songsService: SongsService,
 		private readonly artistsService: ArtistsService,
+		private readonly genresService: GenresService,
+		private readonly elasticsearchSyncService: ElasticsearchSyncService,
 	) {}
 
 	async isAuthor(artistUuid: string, albumUuid: string) {
@@ -39,10 +43,10 @@ export class AlbumsService {
 	async findOneByUuidAndPopulate(uuid: string): Promise<Album> {
 		const album = await this.albumModel
 			.findOne({ uuid })
-			.populate('author')
+			.populate(['author', 'genres'])
 			.populate({
 				path: 'songs',
-				populate: [{ path: 'author' }, { path: 'featuring' }],
+				populate: [{ path: 'author' }, { path: 'featuring' }, { path: 'genres' }],
 			});
 		if (!album) throw NotFoundException;
 		return album;
@@ -51,6 +55,7 @@ export class AlbumsService {
 	async create(createAlbumDto: CreateAlbumDto): Promise<Album> {
 		let duration = 0;
 		const songIds: Types.ObjectId[] = [];
+		const genreIds: Types.ObjectId[] = [];
 		const author = await this.artistsService.findOneByUuid(createAlbumDto.author);
 
 		for (const songUuid of createAlbumDto.songs) {
@@ -58,6 +63,12 @@ export class AlbumsService {
 
 			if (!(await this.songsService.isAuthor(createAlbumDto.author, songUuid))) {
 				throw new UnauthorizedException();
+			}
+
+			for (const genreId of song.genres) {
+				if (!genreIds.includes(genreId as Types.ObjectId)) {
+					genreIds.push(genreId as Types.ObjectId);
+				}
 			}
 
 			duration += song.duration;
@@ -69,10 +80,34 @@ export class AlbumsService {
 				...createAlbumDto,
 				author: author._id,
 				songs: songIds,
+				genres: genreIds,
 				duration,
 			});
-			await createdAlbum.save();
-			return this.findOneByUuidAndPopulate(createdAlbum.uuid);
+			const album = await createdAlbum.save();
+			const populatedAlbum = await this.findOneByUuidAndPopulate(album.uuid);
+			const aux: any = (populatedAlbum as any).toObject();
+			delete aux._id;
+			await this.elasticsearchSyncService.create(
+				'releases',
+				'album',
+				createdAlbum.uuid,
+				{
+					...aux,
+					maxPrice: Math.max(
+						populatedAlbum.pricing.digital,
+						populatedAlbum.pricing.cd,
+						populatedAlbum.pricing.cassette,
+						populatedAlbum.pricing.vinyl,
+					),
+					minPrice: Math.min(
+						populatedAlbum.pricing.digital,
+						populatedAlbum.pricing.cd,
+						populatedAlbum.pricing.cassette,
+						populatedAlbum.pricing.vinyl,
+					),
+				},
+			);
+			return populatedAlbum;
 		} catch (error) {
 			throw new InternalServerErrorException();
 		}
@@ -80,6 +115,8 @@ export class AlbumsService {
 
 	async update(uuid: string, updateAlbumDto: UpdateAlbumDto): Promise<Album> {
 		const album = await this.findOneByUuid(uuid);
+		const songIds: Types.ObjectId[] = [];
+		const genreIds: Types.ObjectId[] = [];
 
 		if (!(await this.isAuthor(updateAlbumDto.author!, uuid))) {
 			throw new UnauthorizedException();
@@ -92,14 +129,55 @@ export class AlbumsService {
 					songUuid,
 				);
 				if (!isAuthor) throw new UnauthorizedException();
+
+				const song = await this.songsService.findOneByUuid(songUuid);
+				songIds.push(song._id);
+
+				for (const genreId of song.genres) {
+					if (!genreIds.includes(genreId as Types.ObjectId)) {
+						genreIds.push(genreId as Types.ObjectId);
+					}
+				}
 			}
 		}
 
-		await this.albumModel.findOneAndUpdate(
+		const updatedAlbum = await this.albumModel.findOneAndUpdate(
 			{ uuid },
-			{ ...album, updateAlbumDto },
+			{
+				...album,
+				...updateAlbumDto,
+				songs: updateAlbumDto.songs ? album.songs : songIds,
+				genres: updateAlbumDto.songs ? album.genres : genreIds,
+			},
 		);
 
-		return this.findOneByUuidAndPopulate(uuid);
+		const populatedAlbum = await this.findOneByUuidAndPopulate(
+			updatedAlbum!.uuid,
+		);
+		const aux: any = (populatedAlbum as any).toObject();
+		delete aux._id;
+
+		await this.elasticsearchSyncService.create(
+			'releases',
+			'album',
+			updatedAlbum!.uuid,
+			{
+				...aux,
+				maxPrice: Math.max(
+					populatedAlbum.pricing.digital,
+					populatedAlbum.pricing.cd,
+					populatedAlbum.pricing.cassette,
+					populatedAlbum.pricing.vinyl,
+				),
+				minPrice: Math.min(
+					populatedAlbum.pricing.digital,
+					populatedAlbum.pricing.cd,
+					populatedAlbum.pricing.cassette,
+					populatedAlbum.pricing.vinyl,
+				),
+			},
+		);
+
+		return populatedAlbum;
 	}
 }
