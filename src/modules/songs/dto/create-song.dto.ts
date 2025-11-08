@@ -1,4 +1,11 @@
-import {IsArray, IsEmpty, IsNotEmpty, IsString, IsUUID, ValidateNested} from 'class-validator';
+import {
+	IsArray,
+	IsEmpty,
+	IsNotEmpty,
+	IsString,
+	IsUUID,
+	ValidateNested,
+} from 'class-validator';
 import {
 	Pricing,
 	type PricingType,
@@ -28,16 +35,16 @@ export class CreateSongDto {
 	@IsEmpty()
 	duration: number;
 
-    @Transform(({ value }) => {
-        if (typeof value === 'string') {
-            return JSON.parse(value);
-        }
-        return value;
-    })
-    @IsArray()
-    @IsString({ each: true })
-    featuring: string[];
+	@Transform(({ value }) => {
+		if (typeof value === 'string') {
+			return JSON.parse(value);
+		}
+		return value;
+	})
+	@IsArray()
+	@IsString({ each: true })
+	featuring: string[];
 
-    @IsEmpty()
-    author: string;
+	@IsEmpty()
+	author: string;
 }

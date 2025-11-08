@@ -7,14 +7,14 @@ import { SongsModule } from '../songs/songs.module';
 import { HttpModule } from '@nestjs/axios';
 import { ServiceTokenProvider } from '../../common/providers/service-token.provider';
 import { BucketService } from '../../common/services/bucket.service';
-import {ArtistsModule} from "../artists/artists.module";
+import { ArtistsModule } from '../artists/artists.module';
 
 @Module({
 	imports: [
 		MongooseModule.forFeature([{ name: Album.name, schema: AlbumSchema }]),
 		SongsModule,
 		HttpModule,
-        ArtistsModule
+		ArtistsModule,
 	],
 	controllers: [AlbumsController],
 	providers: [AlbumsService, ServiceTokenProvider, BucketService],

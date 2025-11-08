@@ -30,8 +30,8 @@ export class Song {
 	@Prop({ default: Date.now() })
 	releaseDate: Date;
 
-    @Prop({ type: Types.ObjectId, ref: 'Artist', required: true })
-    author: Artist | Types.ObjectId;
+	@Prop({ type: Types.ObjectId, ref: 'Artist', required: true })
+	author: Artist | Types.ObjectId;
 
 	@Prop({ type: [Types.ObjectId], ref: 'Artist', required: true })
 	featuring: Artist[] | Types.ObjectId[];

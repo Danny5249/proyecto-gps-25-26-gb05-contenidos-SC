@@ -13,6 +13,6 @@ import { ServiceTokenProvider } from '../../common/providers/service-token.provi
 	],
 	controllers: [ArtistsController],
 	providers: [ArtistsService, ServiceTokenProvider],
-    exports: [ArtistsService]
+	exports: [ArtistsService],
 })
 export class ArtistsModule {}

@@ -5,6 +5,7 @@ import {
 	Delete,
 	FileTypeValidator,
 	Get,
+	NotFoundException,
 	HttpCode,
 	HttpStatus,
 	MaxFileSizeValidator,
@@ -31,8 +32,6 @@ import { BucketService } from '../../common/services/bucket.service';
 import { parseBuffer } from 'music-metadata';
 import { type User as SbUser } from '@supabase/supabase-js';
 import { SupabaseUser } from '../../auth/user.decorator';
-import {UpdateAlbumDto} from "../albums/dto/update-album.dto";
-import {Album} from "../albums/schemas/album.schema";
 
 const validSongFormats = ['audio/mpeg', 'audio/flac'];
 const validCoverFormats = ['image/jpg', 'image/jpeg', 'image/png'];
@@ -43,6 +42,11 @@ export class SongsController {
 		private readonly songsService: SongsService,
 		private readonly bucketService: BucketService,
 	) {}
+
+	@Get(':id')
+	async getSongByUuid(@Param('id') id: string): Promise<Song> {
+		return await this.songsService.findOneByUuidAndPopulate(id);
+	}
 
 	@Post()
 	@UseInterceptors(
@@ -101,14 +105,14 @@ export class SongsController {
 		return song;
 	}
 
-    @Put(':uuid')
-    @Roles(['artist'])
-    @UseGuards(AuthGuard)
-    @HttpCode(HttpStatus.OK)
-    async update(
-        @Param('uuid') uuid: string,
-        @Body() updateSongDto: UpdateSongDto,
-    ): Promise<Song> {
-        return await this.songsService.update(uuid, updateSongDto);
-    }
+	@Put(':uuid')
+	@Roles(['artist'])
+	@UseGuards(AuthGuard)
+	@HttpCode(HttpStatus.OK)
+	async update(
+		@Param('uuid') uuid: string,
+		@Body() updateSongDto: UpdateSongDto,
+	): Promise<Song> {
+		return await this.songsService.update(uuid, updateSongDto);
+	}
 }
