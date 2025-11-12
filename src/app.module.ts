@@ -9,11 +9,18 @@ import { UsersModule } from './modules/users/users.module';
 import { PlaylistsModule } from './modules/playlists/playlists.module';
 import { ProductsModule } from './modules/products/products.module';
 import { SearchModule } from './modules/search/search.module';
+import {BullModule} from "@nestjs/bullmq";
 
 @Module({
 	imports: [
 		ConfigModule.forRoot({ isGlobal: true }),
 		MongooseModule.forRoot(process.env.MONGODB_HOST || ''),
+        BullModule.forRoot({
+            connection: {
+                host: process.env.BULLMQ_REDIS_HOST,
+                port: parseInt(process.env.BULLMQ_REDIS_PORT!)
+            }
+        }),
 		GenresModule,
 		SongsModule,
 		AlbumsModule,
