@@ -83,6 +83,8 @@ export class AlbumsService {
 				genres: genreIds,
 				duration,
 			});
+			createdAlbum.cover = `${process.env.APP_BASE_URL}/static/public/album-covers/${createdAlbum.uuid}`;
+
 			const album = await createdAlbum.save();
 			const populatedAlbum = await this.findOneByUuidAndPopulate(album.uuid);
 			const aux: any = (populatedAlbum as any).toObject();
