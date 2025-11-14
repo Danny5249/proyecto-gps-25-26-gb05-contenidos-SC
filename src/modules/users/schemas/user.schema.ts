@@ -3,14 +3,33 @@ import { v4 as uuidv4 } from 'uuid';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Playlist } from '../../playlists/schemas/playlist.schema';
 import { Artist } from '../../artists/schemas/artist.schema';
+import {Song} from "../../songs/schemas/song.schema";
+import {Album} from "../../albums/schemas/album.schema";
+import {Type} from "class-transformer";
+import {IsIn, IsNotEmpty, IsString} from "class-validator";
 
 export type UserDocument = HydratedDocument<User>;
+
+@Schema({
+	_id: false,
+	versionKey: false,
+})
+export class LibraryItem {
+	@Prop({ required: true, enum: ['Song', 'Album'] })
+	type: string;
+
+	@Prop({ type: Types.ObjectId, required: true, refPath: 'library.type' })
+	item: Types.ObjectId | Song | Album;
+}
+
+export const LibraryItemSchema = SchemaFactory.createForClass(LibraryItem);
 
 @Schema({
 	versionKey: false,
 	toJSON: {
 		transform: (doc, ret) => {
-			const { _id, ...rest } = ret;
+			// @ts-ignore
+			const { _id, library, ...rest } = ret;
 			return rest;
 		},
 	},
@@ -32,6 +51,9 @@ export class User {
 
 	@Prop({ type: [Types.ObjectId], ref: 'Artist' })
 	following: Artist[] | Types.ObjectId[];
+
+	@Prop({ type: [LibraryItemSchema] })
+	library: LibraryItem[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

@@ -35,7 +35,7 @@ export class SongsService {
 
 	async findByAuthorUuid(authorUuid: string): Promise<Song[]> {
 		const artist = await this.artistsService.findOneByUuid(authorUuid);
-		return this.songModel.find({ author: artist._id });
+		return this.songModel.find({ author: artist._id }).populate(['author', 'featuring', 'genres']);
 	}
 
 	async findOneByUuid(uuid: string): Promise<Song> {
