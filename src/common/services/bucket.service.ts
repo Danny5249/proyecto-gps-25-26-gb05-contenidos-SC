@@ -1,5 +1,9 @@
-import { Injectable } from '@nestjs/common';
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+	GetObjectCommand,
+	PutObjectCommand,
+	S3Client,
+} from '@aws-sdk/client-s3';
 
 @Injectable()
 export class BucketService {
@@ -37,12 +41,50 @@ export class BucketService {
 		await this.s3.send(command);
 	}
 
+	async getFromSongCovers(uuid: string): Promise<Buffer> {
+		const command = new GetObjectCommand({
+			Bucket: 'song-covers',
+			Key: uuid,
+		});
+		const response = await this.s3.send(command);
+		if (!response.Body) throw new NotFoundException();
+		const chunks: any[] = [];
+		for await (const chunk of response.Body as any) {
+			chunks.push(chunk);
+		}
+		return Buffer.concat(chunks);
+	}
+
 	async saveToAlbumCovers(uuid: string, cover: Express.Multer.File) {
 		const command = new PutObjectCommand({
 			Bucket: 'album-covers',
 			Key: uuid,
 			Body: cover.buffer,
 			ContentType: cover.mimetype,
+		});
+		await this.s3.send(command);
+	}
+
+	async getFromAlbumCovers(uuid: string): Promise<Buffer> {
+		const command = new GetObjectCommand({
+			Bucket: 'album-covers',
+			Key: uuid,
+		});
+		const response = await this.s3.send(command);
+		if (!response.Body) throw new NotFoundException();
+		const chunks: any[] = [];
+		for await (const chunk of response.Body as any) {
+			chunks.push(chunk);
+		}
+		return Buffer.concat(chunks);
+	}
+
+	async saveToProductPreviews(key: string, preview: Buffer) {
+		const command = new PutObjectCommand({
+			Bucket: 'product-previews',
+			Key: key,
+			Body: preview,
+			ContentType: 'image/jpeg',
 		});
 		await this.s3.send(command);
 	}
