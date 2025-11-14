@@ -1,12 +1,9 @@
 import { HydratedDocument, Types } from 'mongoose';
-import { v4 as uuidv4 } from 'uuid';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Playlist } from '../../playlists/schemas/playlist.schema';
 import { Artist } from '../../artists/schemas/artist.schema';
-import {Song} from "../../songs/schemas/song.schema";
-import {Album} from "../../albums/schemas/album.schema";
-import {Type} from "class-transformer";
-import {IsIn, IsNotEmpty, IsString} from "class-validator";
+import { Song } from '../../songs/schemas/song.schema';
+import { Album } from '../../albums/schemas/album.schema';
 
 export type UserDocument = HydratedDocument<User>;
 

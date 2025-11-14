@@ -5,11 +5,15 @@ import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
 import { HttpModule } from '@nestjs/axios';
 import { ServiceTokenProvider } from '../../common/providers/service-token.provider';
+import { SongsModule } from '../songs/songs.module';
+import { AlbumsModule } from '../albums/albums.module';
 
 @Module({
 	imports: [
 		MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
 		HttpModule,
+		SongsModule,
+		AlbumsModule,
 	],
 	controllers: [UsersController],
 	providers: [UsersService, ServiceTokenProvider],

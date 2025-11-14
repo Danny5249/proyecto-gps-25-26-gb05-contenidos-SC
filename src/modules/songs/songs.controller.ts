@@ -18,9 +18,7 @@ import { UpdateSongDto } from './dto/update-song.dto';
 import { Song } from './schemas/song.schema';
 import { AuthGuard } from '../../auth/auth.guard';
 import { Roles } from '../../auth/roles.decorator';
-import {
-	FileFieldsInterceptor,
-} from '@nestjs/platform-express';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { BucketService } from '../../common/services/bucket.service';
 import { parseBuffer } from 'music-metadata';
 import { type User as SbUser } from '@supabase/supabase-js';

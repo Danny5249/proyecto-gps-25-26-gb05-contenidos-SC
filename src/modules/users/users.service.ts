@@ -4,10 +4,17 @@ import { User } from './schemas/user.schema';
 import { Model } from 'mongoose';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateLibraryDto } from './dto/update-library.dto';
+import { SongsService } from '../songs/songs.service';
+import { AlbumsService } from '../albums/albums.service';
 
 @Injectable()
 export class UsersService {
-	constructor(@InjectModel(User.name) private userModel: Model<User>) {}
+	constructor(
+		@InjectModel(User.name) private userModel: Model<User>,
+		private readonly songsService: SongsService,
+		private readonly albumsService: AlbumsService,
+	) {}
 
 	async create(createUserDto: CreateUserDto): Promise<User> {
 		const user = new this.userModel(createUserDto);
@@ -26,6 +33,18 @@ export class UsersService {
 		return user;
 	}
 
+	async findOneByUuidAndPopulate(uuid: string): Promise<User> {
+		const user = await this.userModel
+			.findOne({ uuid })
+			.populate('library.item')
+			.populate({
+				path: 'library.item',
+				populate: [{ path: 'genres' }, { path: 'author' }],
+			});
+		if (!user) throw NotFoundException;
+		return user;
+	}
+
 	async updateUser(id: string, dto: UpdateUserDto): Promise<User> {
 		const user = await this.userModel.findByIdAndUpdate({ id, ...dto });
 		if (!user) throw new NotFoundException('User not found');
@@ -36,11 +55,31 @@ export class UsersService {
 		return await this.userModel.create(insertedUser);
 	}
 
-	async delete(uuid: string) {
-		await this.userModel.deleteOne({ uuid });
+	async addToLibrary(uuid: string, updateLibraryDto: UpdateLibraryDto) {
+		const user = await this.findOneByUuid(uuid);
+		for (const item of updateLibraryDto.items) {
+			if (item.type === 'song') {
+				const song = await this.songsService.findOneByUuid(item.uuid);
+				user.library.push({
+					type: 'Song',
+					item: song._id,
+				});
+			} else if (item.type === 'album') {
+				const album = await this.albumsService.findOneByUuid(item.uuid);
+				user.library.push({
+					type: 'Album',
+					item: album._id,
+				});
+			}
+		}
+		const updatedUser = await this.userModel.findByIdAndUpdate(user._id, user, {
+			new: true,
+		});
+
+		return (await this.findOneByUuidAndPopulate(updatedUser!.uuid)).library;
 	}
 
-	async remove(id: string): Promise<void> {
-		await this.userModel.findByIdAndDelete(id);
+	async delete(uuid: string) {
+		await this.userModel.deleteOne({ uuid });
 	}
 }

@@ -1,5 +1,12 @@
-import {ArrayNotEmpty, IsArray, IsIn, IsNotEmpty, IsUUID, ValidateNested} from "class-validator";
-import {Type} from "class-transformer";
+import {
+	ArrayNotEmpty,
+	IsArray,
+	IsIn,
+	IsNotEmpty,
+	IsUUID,
+	ValidateNested,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 
 class LibraryItemDto {
 	@IsNotEmpty()
@@ -17,5 +24,5 @@ export class UpdateLibraryDto {
 	@ArrayNotEmpty()
 	@Type(() => LibraryItemDto)
 	@ValidateNested({ each: true })
-	items: LibraryItemDto[]
+	items: LibraryItemDto[];
 }
