@@ -34,6 +34,7 @@ import { type User as SbUser } from '@supabase/supabase-js';
 import { SupabaseUser } from '../../auth/user.decorator';
 import { UpdateAlbumDto } from '../albums/dto/update-album.dto';
 import { Album } from '../albums/schemas/album.schema';
+import { Genre } from '../genres/schemas/genre.schema';
 
 const validSongFormats = ['audio/mpeg', 'audio/flac'];
 const validCoverFormats = ['image/jpg', 'image/jpeg', 'image/png'];
@@ -45,7 +46,16 @@ export class SongsController {
 		private readonly bucketService: BucketService,
 	) {}
 
+	@Get()
+	@Roles(['artist'])
+	@UseGuards(AuthGuard)
+	@HttpCode(HttpStatus.OK)
+	async getSongsByAuthorUuid(@SupabaseUser() sbUser: SbUser) {
+		return this.songsService.findByAuthorUuid(sbUser.id);
+	}
+
 	@Get(':uuid')
+	@HttpCode(HttpStatus.OK)
 	async getSongByUuid(@Param('uuid') uuid: string): Promise<Song> {
 		return await this.songsService.findOneByUuidAndPopulate(uuid);
 	}

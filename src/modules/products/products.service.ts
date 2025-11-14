@@ -1,38 +1,127 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+	Injectable,
+	NotFoundException,
+	UnauthorizedException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import {Product, ProductType} from './schemas/product.schema';
-import { Model } from 'mongoose';
+import { Product, ProductType } from './schemas/product.schema';
+import { Model, Types } from 'mongoose';
 import { CreateProductDto } from './dto/create-product.dto';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
+import { SongsService } from '../songs/songs.service';
+import { AlbumsService } from '../albums/albums.service';
+import { Artist } from '../artists/schemas/artist.schema';
+import { Song } from '../songs/schemas/song.schema';
+import { Album } from '../albums/schemas/album.schema';
 import { UpdateProductDto } from './dto/update-product.dto';
-import {InjectQueue} from "@nestjs/bullmq";
-import {Queue} from "bullmq";
 
 @Injectable()
 export class ProductsService {
 	constructor(
-        @InjectModel(Product.name) private productModel: Model<Product>,
-        @InjectQueue('productPreview') private productPreviewQueue: Queue
-    ) {}
+		@InjectModel(Product.name) private productModel: Model<Product>,
+		@InjectQueue('productPreview') private productPreviewQueue: Queue,
+		private readonly songsService: SongsService,
+		private readonly albumsService: AlbumsService,
+	) {}
 
 	async findAll(): Promise<Product[]> {
-        return this.productModel.find();
-    }
+		return this.productModel.find();
+	}
 
-    async findOneByUuid(uuid: string): Promise<Product> {
-        const product = await this.productModel.findOne({ uuid });
-        if (!product) throw new NotFoundException();
-        return product;
-    }
+	async findOneByUuid(uuid: string): Promise<Product> {
+		const product = await this.productModel.findOne({ uuid });
+		if (!product) throw new NotFoundException();
+		return product;
+	}
 
-    async create(createProductDto: CreateProductDto): Promise<Product> {
-        // TODO: completar
+	async findOneByUuidAndPopulate(uuid: string): Promise<Product> {
+		let product = await this.productModel.findOne({ uuid });
+		if (!product) throw new NotFoundException();
 
-        const previewJob = await this.productPreviewQueue.add('productPreview', {
-            referenceType: createProductDto.referenceType,
-            referenceUuid: createProductDto.reference,
-            productUuid: '',
-            type: ProductType
-        });
-        return new Product();
-    }
+		if (product.referenceType === 'song') {
+			product = await product.populate({
+				path: 'reference',
+				populate: [{ path: 'author' }, { path: 'genres' }, { path: 'featuring' }],
+			});
+		} else if (product.referenceType === 'album') {
+			product = await product.populate({
+				path: 'reference',
+				populate: [
+					{ path: 'author' },
+					{ path: 'genres' },
+					{
+						path: 'songs',
+						populate: [{ path: 'author' }, { path: 'featuring' }, { path: 'genres' }],
+					},
+				],
+			});
+		}
+
+		return product;
+	}
+
+	async create(createProductDto: CreateProductDto): Promise<Product> {
+		let reference: Types.ObjectId = new Types.ObjectId();
+
+		if (createProductDto.referenceType === 'song') {
+			const song = await this.songsService.findOneByUuidAndPopulate(
+				createProductDto.reference,
+			);
+			if ((song.author as Artist).uuid !== createProductDto.authorUuid)
+				throw new UnauthorizedException();
+			reference = song._id;
+		} else if (createProductDto.referenceType === 'album') {
+			const album = await this.albumsService.findOneByUuidAndPopulate(
+				createProductDto.reference,
+			);
+			if ((album.author as Artist).uuid !== createProductDto.authorUuid)
+				throw new UnauthorizedException();
+			reference = album._id;
+		}
+
+		const type = createProductDto.referenceType;
+
+		let product = await this.productModel.create({
+			...createProductDto,
+			refPath: type.at(0)!.toUpperCase() + type.slice(1),
+			reference,
+		});
+		product = await product.save();
+
+		this.productPreviewQueue.add('productPreview', {
+			referenceType: createProductDto.referenceType,
+			referenceUuid: createProductDto.reference,
+			productUuid: product.uuid,
+			type: createProductDto.type,
+		});
+
+		return await this.findOneByUuidAndPopulate(product.uuid);
+	}
+
+	async addPreview(uuid: string, preview: string): Promise<Product> {
+		const product = await this.findOneByUuid(uuid);
+		if (!product) throw new NotFoundException();
+		product.previews.push(preview);
+		const updatedProduct = await this.productModel.findByIdAndUpdate(
+			product._id,
+			product,
+			{ new: true },
+		);
+		return updatedProduct!;
+	}
+
+	async update(updateProductDto: UpdateProductDto): Promise<Product> {
+		const product = await this.findOneByUuidAndPopulate(updateProductDto.uuid);
+		const updatedProduct = await this.productModel.findByIdAndUpdate(
+			product._id,
+			updateProductDto,
+			{ new: true },
+		);
+		return updatedProduct!;
+	}
+
+	async deleteByUuid(uuid: string): Promise<void> {
+		await this.productModel.deleteOne({ uuid });
+	}
 }
