@@ -2,18 +2,12 @@ import {
 	BadRequestException,
 	Body,
 	Controller,
-	Delete,
-	FileTypeValidator,
 	Get,
-	NotFoundException,
 	HttpCode,
 	HttpStatus,
-	MaxFileSizeValidator,
 	Param,
-	ParseFilePipe,
 	Post,
 	Put,
-	UploadedFile,
 	UploadedFiles,
 	UseGuards,
 	UseInterceptors,
@@ -26,15 +20,11 @@ import { AuthGuard } from '../../auth/auth.guard';
 import { Roles } from '../../auth/roles.decorator';
 import {
 	FileFieldsInterceptor,
-	FileInterceptor,
 } from '@nestjs/platform-express';
 import { BucketService } from '../../common/services/bucket.service';
 import { parseBuffer } from 'music-metadata';
 import { type User as SbUser } from '@supabase/supabase-js';
 import { SupabaseUser } from '../../auth/user.decorator';
-import { UpdateAlbumDto } from '../albums/dto/update-album.dto';
-import { Album } from '../albums/schemas/album.schema';
-import { Genre } from '../genres/schemas/genre.schema';
 
 const validSongFormats = ['audio/mpeg', 'audio/flac'];
 const validCoverFormats = ['image/jpg', 'image/jpeg', 'image/png'];

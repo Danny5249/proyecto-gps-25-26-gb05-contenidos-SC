@@ -4,7 +4,7 @@ import {
 	UnauthorizedException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Product, ProductType } from './schemas/product.schema';
+import { Product } from './schemas/product.schema';
 import { Model, Types } from 'mongoose';
 import { CreateProductDto } from './dto/create-product.dto';
 import { InjectQueue } from '@nestjs/bullmq';
@@ -12,8 +12,6 @@ import { Queue } from 'bullmq';
 import { SongsService } from '../songs/songs.service';
 import { AlbumsService } from '../albums/albums.service';
 import { Artist } from '../artists/schemas/artist.schema';
-import { Song } from '../songs/schemas/song.schema';
-import { Album } from '../albums/schemas/album.schema';
 import { UpdateProductDto } from './dto/update-product.dto';
 
 @Injectable()
