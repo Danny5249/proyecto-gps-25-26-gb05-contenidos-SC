@@ -3,12 +3,30 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Product, ProductSchema } from './schemas/product.schema';
 import { ProductsService } from './products.service';
 import { ProductsController } from './products.controller';
+import { BullModule } from '@nestjs/bullmq';
+import { ProductPreviewConsumer } from './consumers/product-preview.consumer';
+import { HttpModule } from '@nestjs/axios';
+import { ServiceTokenProvider } from '../../common/providers/service-token.provider';
+import { BucketService } from '../../common/services/bucket.service';
+import { SongsModule } from '../songs/songs.module';
+import { AlbumsModule } from '../albums/albums.module';
 
 @Module({
 	imports: [
 		MongooseModule.forFeature([{ name: Product.name, schema: ProductSchema }]),
+		BullModule.registerQueue({
+			name: 'productPreview',
+		}),
+		HttpModule,
+		SongsModule,
+		AlbumsModule,
 	],
 	controllers: [ProductsController],
-	providers: [ProductsService],
+	providers: [
+		BucketService,
+		ProductsService,
+		ProductPreviewConsumer,
+		ServiceTokenProvider,
+	],
 })
 export class ProductsModule {}

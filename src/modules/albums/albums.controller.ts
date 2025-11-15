@@ -33,9 +33,9 @@ export class AlbumsController {
 		private readonly bucketService: BucketService,
 	) {}
 
-	@Get(':id')
-	async getAlbumByUuid(@Param('id') id: string): Promise<Album> {
-		return await this.albumsService.findOneByUuidAndPopulate(id);
+	@Get(':uuid')
+	async getAlbumByUuid(@Param('uuid') uuid: string): Promise<Album> {
+		return await this.albumsService.findOneByUuidAndPopulate(uuid);
 	}
 
 	@Post()

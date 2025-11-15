@@ -1,7 +1,5 @@
 import {
 	BadRequestException,
-	forwardRef,
-	Inject,
 	Injectable,
 	InternalServerErrorException,
 	NotFoundException,
@@ -32,7 +30,12 @@ export class SongsService {
 	}
 
 	async findAll(): Promise<Song[]> {
-		return await this.songModel.find().exec();
+		return this.songModel.find();
+	}
+
+	async findByAuthorUuid(authorUuid: string): Promise<Song[]> {
+		const artist = await this.artistsService.findOneByUuid(authorUuid);
+		return this.songModel.find({ author: artist._id });
 	}
 
 	async findOneByUuid(uuid: string): Promise<Song> {
@@ -70,6 +73,8 @@ export class SongsService {
 			featuring: featIds,
 			genres: genreIds,
 		});
+
+		createdSong.cover = `${process.env.APP_BASE_URL}/static/public/song-covers/${createdSong.uuid}`;
 
 		try {
 			const song = await createdSong.save();
