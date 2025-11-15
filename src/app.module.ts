@@ -10,6 +10,7 @@ import { PlaylistsModule } from './modules/playlists/playlists.module';
 import { ProductsModule } from './modules/products/products.module';
 import { SearchModule } from './modules/search/search.module';
 import { BullModule } from '@nestjs/bullmq';
+import { HelpModule } from './modules/help/help.module';
 
 @Module({
 	imports: [
@@ -29,6 +30,7 @@ import { BullModule } from '@nestjs/bullmq';
 		PlaylistsModule,
 		ProductsModule,
 		SearchModule,
+		HelpModule,
 	],
 })
 export class AppModule {}
