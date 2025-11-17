@@ -13,5 +13,6 @@ import { ServiceTokenProvider } from '../../common/providers/service-token.provi
 	],
 	controllers: [UsersController],
 	providers: [UsersService, ServiceTokenProvider],
+	exports: [UsersService],
 })
 export class UsersModule {}
