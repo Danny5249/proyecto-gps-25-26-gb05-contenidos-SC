@@ -6,7 +6,7 @@ import {
 	UnauthorizedException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Song } from './schemas/song.schema';
+import { Song, SongFormats } from './schemas/song.schema';
 import { Model, Types } from 'mongoose';
 import { CreateSongDto } from './dto/create-song.dto';
 import { UpdateSongDto } from './dto/update-song.dto';
@@ -18,6 +18,8 @@ import { Readable } from 'stream';
 import { createWriteStream } from 'node:fs';
 import * as stream from 'node:stream';
 import { UsersService } from '../users/users.service';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 
 @Injectable()
 export class SongsService {
@@ -169,6 +171,13 @@ export class SongsService {
 		);
 
 		return populatedSong;
+	}
+
+	async addFormat(uuid: string, format: SongFormats) {
+		const song = await this.songModel.findOne({ uuid });
+		if (!song) throw new NotFoundException();
+		song.formats.push(format);
+		await song.save();
 	}
 
 	async deleteByUuid(uuid: string): Promise<void> {

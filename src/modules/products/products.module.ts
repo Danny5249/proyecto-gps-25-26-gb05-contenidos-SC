@@ -10,10 +10,12 @@ import { ServiceTokenProvider } from '../../common/providers/service-token.provi
 import { BucketService } from '../../common/services/bucket.service';
 import { SongsModule } from '../songs/songs.module';
 import { AlbumsModule } from '../albums/albums.module';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
 	imports: [
 		MongooseModule.forFeature([{ name: Product.name, schema: ProductSchema }]),
+		CacheModule.register(),
 		BullModule.registerQueue({
 			name: 'productPreview',
 		}),

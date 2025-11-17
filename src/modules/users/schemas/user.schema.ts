@@ -40,7 +40,7 @@ export class User {
 	@Prop({ unique: true, required: true })
 	username: string;
 
-	@Prop({ default: '' })
+	@Prop({ default: `${process.env.APP_BASE_URL}/static/public/user-profiles/default.jpg` })
 	profileImg: string;
 
 	@Prop({ type: [Types.ObjectId], ref: 'Playlist' })
