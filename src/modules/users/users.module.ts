@@ -7,10 +7,12 @@ import { HttpModule } from '@nestjs/axios';
 import { ServiceTokenProvider } from '../../common/providers/service-token.provider';
 import { SongsModule } from '../songs/songs.module';
 import { AlbumsModule } from '../albums/albums.module';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
 	imports: [
 		MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+		CacheModule.register(),
 		HttpModule,
 		SongsModule,
 		AlbumsModule,

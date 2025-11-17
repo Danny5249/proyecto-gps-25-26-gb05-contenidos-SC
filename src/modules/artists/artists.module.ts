@@ -5,10 +5,12 @@ import { ArtistsService } from './artists.service';
 import { ArtistsController } from './artists.controller';
 import { HttpModule } from '@nestjs/axios';
 import { ServiceTokenProvider } from '../../common/providers/service-token.provider';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
 	imports: [
 		MongooseModule.forFeature([{ name: Artist.name, schema: ArtistSchema }]),
+		CacheModule.register(),
 		HttpModule,
 	],
 	controllers: [ArtistsController],

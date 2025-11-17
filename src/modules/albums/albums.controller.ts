@@ -33,6 +33,14 @@ export class AlbumsController {
 		private readonly bucketService: BucketService,
 	) {}
 
+	@Get()
+	@Roles(['artist'])
+	@UseGuards(AuthGuard)
+	@HttpCode(HttpStatus.OK)
+	async getAlbumByAuthorToken(@SupabaseUser() sbUser: SbUser): Promise<Album[]> {
+		return await this.albumsService.findByAuthorUuid(sbUser.id);
+	}
+
 	@Get(':uuid')
 	async getAlbumByUuid(@Param('uuid') uuid: string): Promise<Album> {
 		return await this.albumsService.findOneByUuidAndPopulate(uuid);

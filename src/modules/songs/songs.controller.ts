@@ -8,14 +8,17 @@ import {
 	Param,
 	Post,
 	Put,
+	Res,
+	StreamableFile,
 	UploadedFiles,
 	UseGuards,
 	UseInterceptors,
 } from '@nestjs/common';
+import { type Response } from 'express';
 import { SongsService } from './songs.service';
 import { CreateSongDto } from './dto/create-song.dto';
 import { UpdateSongDto } from './dto/update-song.dto';
-import { Song } from './schemas/song.schema';
+import { Song, SongFormats } from './schemas/song.schema';
 import { AuthGuard } from '../../auth/auth.guard';
 import { Roles } from '../../auth/roles.decorator';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
@@ -23,8 +26,16 @@ import { BucketService } from '../../common/services/bucket.service';
 import { parseBuffer } from 'music-metadata';
 import { type User as SbUser } from '@supabase/supabase-js';
 import { SupabaseUser } from '../../auth/user.decorator';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 
-const validSongFormats = ['audio/mpeg', 'audio/flac'];
+const validSongFormats = [
+	'audio/mpeg',
+	'audio/aac',
+	'audio/flac',
+	'audio/x-flac',
+	'audio/x-aac',
+];
 const validCoverFormats = ['image/jpg', 'image/jpeg', 'image/png'];
 
 @Controller('songs')
@@ -32,13 +43,15 @@ export class SongsController {
 	constructor(
 		private readonly songsService: SongsService,
 		private readonly bucketService: BucketService,
+		@InjectQueue('songPreview') private songPreviewQueue: Queue,
+		@InjectQueue('songTranscode') private songTranscodeQueue: Queue,
 	) {}
 
 	@Get()
 	@Roles(['artist'])
 	@UseGuards(AuthGuard)
 	@HttpCode(HttpStatus.OK)
-	async getSongsByAuthorUuid(@SupabaseUser() sbUser: SbUser) {
+	async getSongsByAuthorToken(@SupabaseUser() sbUser: SbUser) {
 		return this.songsService.findByAuthorUuid(sbUser.id);
 	}
 
@@ -46,6 +59,25 @@ export class SongsController {
 	@HttpCode(HttpStatus.OK)
 	async getSongByUuid(@Param('uuid') uuid: string): Promise<Song> {
 		return await this.songsService.findOneByUuidAndPopulate(uuid);
+	}
+
+	@Get(':uuid/preview')
+	@HttpCode(HttpStatus.OK)
+	async getSongPreviewByUuid(@Param('uuid') uuid: string, @Res() res: Response) {
+		const fileStream = await this.bucketService.getFromSongFilesAsStream(
+			`${uuid}-preview`,
+		);
+
+		res.set({
+			'Content-Type': 'audio/mpeg',
+			'Content-Disposition': 'inline; filename="preview.mp3"',
+			'Cache-Control': 'public, max-age=3600',
+		});
+
+		fileStream.pipe(res);
+		fileStream.on('error', () => {
+			res.status(500).send();
+		});
 	}
 
 	@Post()
@@ -99,8 +131,41 @@ export class SongsController {
 			author: sbUser.id,
 		});
 
-		await this.bucketService.saveToSongFiles(song.uuid, file);
+		await this.bucketService.saveToSongFiles(
+			song.uuid,
+			file.buffer,
+			file.mimetype,
+		);
 		await this.bucketService.saveToSongCovers(song.uuid, cover);
+
+		this.songPreviewQueue.add('songPreview', {
+			uuid: song.uuid,
+		});
+
+		this.songTranscodeQueue.add('songTranscode', {
+			uuid: song.uuid,
+			format: SongFormats.MP3320,
+		});
+		this.songTranscodeQueue.add('songTranscode', {
+			uuid: song.uuid,
+			format: SongFormats.MP3128,
+		});
+
+		if (file.mimetype === 'audio/flac' || file.mimetype === 'audio/x-flac') {
+			this.songTranscodeQueue.add('songTranscode', {
+				uuid: song.uuid,
+				format: SongFormats.AAC,
+			});
+			this.songTranscodeQueue.add('songTranscode', {
+				uuid: song.uuid,
+				format: SongFormats.FLAC,
+			});
+		} else if (file.mimetype === 'audio/aac' || file.mimetype === 'audio/x-aac') {
+			this.songTranscodeQueue.add('songTranscode', {
+				uuid: song.uuid,
+				format: SongFormats.AAC,
+			});
+		}
 
 		return song;
 	}
