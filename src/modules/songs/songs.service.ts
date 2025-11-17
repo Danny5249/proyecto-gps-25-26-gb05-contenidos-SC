@@ -13,12 +13,11 @@ import { UpdateSongDto } from './dto/update-song.dto';
 import { ArtistsService } from '../artists/artists.service';
 import { ElasticsearchSyncService } from '../../common/services/elasticsearch-sync.service';
 import { GenresService } from '../genres/genres.service';
-import {BucketService} from "../../common/services/bucket.service";
-import {Readable} from "stream";
-import {createWriteStream} from "node:fs";
-import * as stream from "node:stream";
-import {UsersService} from "../users/users.service";
-
+import { BucketService } from '../../common/services/bucket.service';
+import { Readable } from 'stream';
+import { createWriteStream } from 'node:fs';
+import * as stream from 'node:stream';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class SongsService {
@@ -27,7 +26,7 @@ export class SongsService {
 		private readonly artistsService: ArtistsService,
 		private readonly genresService: GenresService,
 		private readonly elasticsearchSyncService: ElasticsearchSyncService,
-        private readonly bucketService: BucketService,
+		private readonly bucketService: BucketService,
 	) {}
 
 	async isAuthor(artistUuid: string, songUuid: string) {
@@ -177,23 +176,7 @@ export class SongsService {
 		await this.songModel.deleteOne({ uuid });
 	}
 
-    async download(uuid: string, ): Promise<void>{
-
-        const data = await this.bucketService.getFileByUuid(uuid);
-        if(data.Body instanceof Readable){
-            const fileStream = createWriteStream("./song.mp3");
-
-            data.Body.pipe(fileStream);
-
-            fileStream.on("finish", () => {
-                console.log("File downloaded");
-            });
-
-            fileStream.on("error", (err) => {
-                console.error("Error downloading file:", err);
-            });
-        } else{
-            throw new Error("File not readable");
-        }
-    }
+	async download(uuid: string): Promise<any> {
+		return await this.bucketService.getFileByUuid(uuid);
+	}
 }

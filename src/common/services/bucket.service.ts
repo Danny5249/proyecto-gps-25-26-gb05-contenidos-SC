@@ -89,11 +89,14 @@ export class BucketService {
 		await this.s3.send(command);
 	}
 
-    async getFileByUuid(uuid: string){
-        const downloadParams = {
-            Bucket: 'song-files',
-            Key: uuid,
-        }
-        return  await this.s3.send( new GetObjectCommand(downloadParams));
-    }
+	async getFileByUuid(uuid: string) {
+		const downloadParams = {
+			Bucket: 'song-files',
+			Key: uuid,
+		};
+		const response = await this.s3.send(new GetObjectCommand(downloadParams));
+		if (!response.Body) throw new NotFoundException();
+
+		return response.Body;
+	}
 }

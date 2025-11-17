@@ -1,16 +1,22 @@
 import {
-    BadRequestException,
-    Body,
-    Controller, Delete, forwardRef,
-    Get,
-    HttpCode,
-    HttpStatus, Inject,
-    Param,
-    Post,
-    Put, UnauthorizedException,
-    UploadedFiles,
-    UseGuards,
-    UseInterceptors,
+	BadRequestException,
+	Body,
+	Controller,
+	Delete,
+	forwardRef,
+	Get,
+	HttpCode,
+	HttpStatus,
+	Inject,
+	Param,
+	Post,
+	Put,
+	Res,
+	StreamableFile,
+	UnauthorizedException,
+	UploadedFiles,
+	UseGuards,
+	UseInterceptors,
 } from '@nestjs/common';
 import { SongsService } from './songs.service';
 import { CreateSongDto } from './dto/create-song.dto';
@@ -23,7 +29,9 @@ import { BucketService } from '../../common/services/bucket.service';
 import { parseBuffer } from 'music-metadata';
 import { type User as SbUser } from '@supabase/supabase-js';
 import { SupabaseUser } from '../../auth/user.decorator';
-import {UsersService} from "../users/users.service";
+import { UsersService } from '../users/users.service';
+import { Artist } from '../artists/schemas/artist.schema';
+import type { Response } from 'express';
 
 const validSongFormats = ['audio/mpeg', 'audio/flac'];
 const validCoverFormats = ['image/jpg', 'image/jpeg', 'image/png'];
@@ -33,7 +41,7 @@ export class SongsController {
 	constructor(
 		private readonly songsService: SongsService,
 		private readonly bucketService: BucketService,
-        private readonly usersService: UsersService,
+		private readonly usersService: UsersService,
 	) {}
 
 	@Get()
@@ -118,36 +126,39 @@ export class SongsController {
 		return await this.songsService.update(uuid, updateSongDto);
 	}
 
-    @Delete(':uuid')
-    @Roles(['artist'])
-    @UseGuards(AuthGuard)
-    @HttpCode(HttpStatus.OK)
-    async deleteFromUuid(
-        @Param('uuid') uuid: string,
-    ): Promise<void> {
-        return await this.songsService.deleteByUuid(uuid);
-    }
-    @Get(':uuid/download')
-    @Roles(['user', 'artist'])
-    @UseGuards(AuthGuard)
-    @HttpCode(HttpStatus.OK)
-    async downloadSong(
-        @Param('uuid') uuid: string,
-        @SupabaseUser() sbUser: SbUser,
+	@Delete(':uuid')
+	@Roles(['artist'])
+	@UseGuards(AuthGuard)
+	@HttpCode(HttpStatus.OK)
+	async deleteFromUuid(@Param('uuid') uuid: string): Promise<void> {
+		return await this.songsService.deleteByUuid(uuid);
+	}
 
-    ) : Promise<void> {
-        const user = await this.usersService.findOneByUuidAndPopulate(sbUser.id);
-        const song = await this.songsService.findOneByUuid(uuid);
-        let found:boolean = false;
+	@Get(':uuid/download')
+	@Roles(['user', 'artist'])
+	@UseGuards(AuthGuard)
+	@HttpCode(HttpStatus.OK)
+	async downloadSong(
+		@Param('uuid') uuid: string,
+		@SupabaseUser() sbUser: SbUser,
+		@Res({ passthrough: true }) res: Response,
+	) {
+		const song = await this.songsService.findOneByUuidAndPopulate(uuid);
+		let found: boolean = false;
 
-        for(let i=0; i< user.library.length && !found; i++){
-            if(user.library[i].item == song._id || song.author == user._id){
-                return await this.songsService.download(uuid);
-            }
-        }
+		if (sbUser.role === 'user') {
+			const user = await this.usersService.findOneByUuidAndPopulate(uuid);
+			const found = user.library.some((l) => l.item._id === song._id);
+			if (!found) throw new UnauthorizedException();
+		} else if (sbUser.role === 'artist') {
+			const artist = await this.usersService.findOneByUuid(sbUser.id);
+			if (artist.uuid !== (song.author as Artist).uuid) {
+				throw new UnauthorizedException();
+			}
+		}
+		const fileStream = await this.songsService.download(uuid);
 
-        throw new UnauthorizedException();
-
-    }
-
+		res.setHeader('Content-Type', 'audio/mpeg');
+		return new StreamableFile(fileStream as any);
+	}
 }
