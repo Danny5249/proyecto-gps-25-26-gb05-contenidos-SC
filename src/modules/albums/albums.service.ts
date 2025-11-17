@@ -182,4 +182,9 @@ export class AlbumsService {
 
 		return populatedAlbum;
 	}
+
+    async deleteByUuid(uuid: string) : Promise<void>{
+        await this.elasticsearchSyncService.delete('releases', 'album', uuid);
+        await this.albumModel.deleteOne({uuid});
+    }
 }

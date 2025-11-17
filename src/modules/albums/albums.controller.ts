@@ -81,4 +81,14 @@ export class AlbumsController {
 	): Promise<Album> {
 		return await this.albumsService.update(uuid, updateAlbumDto);
 	}
+
+    @Delete(':uuid')
+    @Roles(['artist'])
+    @UseGuards(AuthGuard)
+    @HttpCode(HttpStatus.OK)
+    async deleteByUuid(
+        @Param ('uuid') uuid: string,
+    ) : Promise<void>{
+        return await this.albumsService.deleteByUuid(uuid);
+    }
 }
