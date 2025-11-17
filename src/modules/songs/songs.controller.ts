@@ -1,16 +1,16 @@
 import {
-	BadRequestException,
-	Body,
-	Controller,
-	Get,
-	HttpCode,
-	HttpStatus,
-	Param,
-	Post,
-	Put,
-	UploadedFiles,
-	UseGuards,
-	UseInterceptors,
+    BadRequestException,
+    Body,
+    Controller, Delete,
+    Get,
+    HttpCode,
+    HttpStatus,
+    Param,
+    Post,
+    Put,
+    UploadedFiles,
+    UseGuards,
+    UseInterceptors,
 } from '@nestjs/common';
 import { SongsService } from './songs.service';
 import { CreateSongDto } from './dto/create-song.dto';
@@ -117,4 +117,14 @@ export class SongsController {
 	): Promise<Song> {
 		return await this.songsService.update(uuid, updateSongDto);
 	}
+
+    @Delete(':uuid')
+    @Roles(['artist'])
+    @UseGuards(AuthGuard)
+    @HttpCode(HttpStatus.OK)
+    async deleteByUuid(
+        @Param('uuid') uuid: string,
+    ) : Promise<void> {
+        return await this.songsService.deleteByUuid(uuid);
+    }
 }
