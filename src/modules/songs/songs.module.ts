@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import {forwardRef, Module} from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Song, SongSchema } from './schemas/song.schema';
 import { SongsService } from './songs.service';
@@ -9,6 +9,9 @@ import { BucketService } from '../../common/services/bucket.service';
 import { ArtistsModule } from '../artists/artists.module';
 import { SearchModule } from '../search/search.module';
 import { GenresModule } from '../genres/genres.module';
+import { UsersModule } from "../users/users.module";
+import {UsersService} from "../users/users.service";
+
 
 @Module({
 	imports: [
@@ -17,9 +20,10 @@ import { GenresModule } from '../genres/genres.module';
 		ArtistsModule,
 		SearchModule,
 		GenresModule,
+        forwardRef(()=>UsersModule),
 	],
 	controllers: [SongsController],
-	providers: [SongsService, ServiceTokenProvider, BucketService],
+	providers: [SongsService, ServiceTokenProvider, BucketService, UsersService],
 	exports: [SongsService],
 })
 export class SongsModule {}

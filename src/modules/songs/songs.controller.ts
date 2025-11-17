@@ -1,16 +1,16 @@
 import {
-	BadRequestException,
-	Body,
-	Controller,
-	Get,
-	HttpCode,
-	HttpStatus,
-	Param,
-	Post,
-	Put,
-	UploadedFiles,
-	UseGuards,
-	UseInterceptors,
+    BadRequestException,
+    Body,
+    Controller, Delete, forwardRef,
+    Get,
+    HttpCode,
+    HttpStatus, Inject,
+    Param,
+    Post,
+    Put, UnauthorizedException,
+    UploadedFiles,
+    UseGuards,
+    UseInterceptors,
 } from '@nestjs/common';
 import { SongsService } from './songs.service';
 import { CreateSongDto } from './dto/create-song.dto';
@@ -23,6 +23,7 @@ import { BucketService } from '../../common/services/bucket.service';
 import { parseBuffer } from 'music-metadata';
 import { type User as SbUser } from '@supabase/supabase-js';
 import { SupabaseUser } from '../../auth/user.decorator';
+import {UsersService} from "../users/users.service";
 
 const validSongFormats = ['audio/mpeg', 'audio/flac'];
 const validCoverFormats = ['image/jpg', 'image/jpeg', 'image/png'];
@@ -32,6 +33,7 @@ export class SongsController {
 	constructor(
 		private readonly songsService: SongsService,
 		private readonly bucketService: BucketService,
+        private readonly usersService: UsersService,
 	) {}
 
 	@Get()
@@ -115,4 +117,37 @@ export class SongsController {
 	): Promise<Song> {
 		return await this.songsService.update(uuid, updateSongDto);
 	}
+
+    @Delete(':uuid')
+    @Roles(['artist'])
+    @UseGuards(AuthGuard)
+    @HttpCode(HttpStatus.OK)
+    async deleteFromUuid(
+        @Param('uuid') uuid: string,
+    ): Promise<void> {
+        return await this.songsService.deleteByUuid(uuid);
+    }
+    @Get(':uuid/download')
+    @Roles(['user', 'artist'])
+    @UseGuards(AuthGuard)
+    @HttpCode(HttpStatus.OK)
+    async downloadSong(
+        @Param('uuid') uuid: string,
+        @SupabaseUser() sbUser: SbUser,
+
+    ) : Promise<void> {
+        const user = await this.usersService.findOneByUuidAndPopulate(sbUser.id);
+        const song = await this.songsService.findOneByUuid(uuid);
+        let found:boolean = false;
+
+        for(let i=0; i< user.library.length && !found; i++){
+            if(user.library[i].item == song._id || song.author == user._id){
+                return await this.songsService.download(uuid);
+            }
+        }
+
+        throw new UnauthorizedException();
+
+    }
+
 }

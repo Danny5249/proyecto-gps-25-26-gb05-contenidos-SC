@@ -88,4 +88,12 @@ export class BucketService {
 		});
 		await this.s3.send(command);
 	}
+
+    async getFileByUuid(uuid: string){
+        const downloadParams = {
+            Bucket: 'song-files',
+            Key: uuid,
+        }
+        return  await this.s3.send( new GetObjectCommand(downloadParams));
+    }
 }

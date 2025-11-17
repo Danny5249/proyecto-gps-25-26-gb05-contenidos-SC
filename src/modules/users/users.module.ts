@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import {forwardRef, Module} from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from './schemas/user.schema';
 import { UsersService } from './users.service';
@@ -12,10 +12,11 @@ import { AlbumsModule } from '../albums/albums.module';
 	imports: [
 		MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
 		HttpModule,
-		SongsModule,
+		forwardRef(()=>SongsModule),
 		AlbumsModule,
 	],
 	controllers: [UsersController],
 	providers: [UsersService, ServiceTokenProvider],
+    exports: [UsersService],
 })
 export class UsersModule {}
