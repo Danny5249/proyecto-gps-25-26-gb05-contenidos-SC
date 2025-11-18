@@ -67,4 +67,10 @@ export class UsersService {
 		);
 		await user.save();
 	}
+
+	async findOneByUuidAndPopulateLibrary(uuid: string) {
+		const user = await this.userModel.findOne({ uuid }).populate('playlists');
+		if (!user) throw NotFoundException;
+		return user;
+	}
 }

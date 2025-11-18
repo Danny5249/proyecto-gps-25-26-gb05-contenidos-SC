@@ -18,6 +18,7 @@ import { AuthGuard } from '../../auth/auth.guard';
 import { User } from './schemas/user.schema';
 import { SupabaseUser } from '../../auth/user.decorator';
 import { type User as SbUser } from '@supabase/supabase-js';
+import { Playlist } from '../playlists/schemas/playlist.schema';
 
 @Controller('users')
 export class UsersController {
@@ -52,5 +53,14 @@ export class UsersController {
 		}
 
 		return this.usersService.updateUser(id, updateUserDto);
+	}
+
+	@Get('playlists')
+	@UseGuards(AuthGuard)
+	@Roles(['user', 'artist'])
+	@HttpCode(HttpStatus.OK)
+	async getUserPlaylist(@SupabaseUser() sbUser: SbUser): Promise<Playlist[]> {
+		return (await this.usersService.findOneByUuidAndPopulateLibrary(sbUser.id))
+			.playlists as Playlist[];
 	}
 }
