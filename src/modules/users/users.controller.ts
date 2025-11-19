@@ -19,6 +19,7 @@ import { User } from './schemas/user.schema';
 import { SupabaseUser } from '../../auth/user.decorator';
 import { type User as SbUser } from '@supabase/supabase-js';
 import { UpdateLibraryDto } from './dto/update-library.dto';
+import { Playlist } from '../playlists/schemas/playlist.schema';
 
 @Controller('users')
 export class UsersController {
@@ -85,5 +86,14 @@ export class UsersController {
 	@HttpCode(HttpStatus.OK)
 	async deleteUserByUuid(@Param('uuid') uuid: string) {
 		return await this.usersService.delete(uuid);
+  }
+  
+	@Get('playlists')
+	@UseGuards(AuthGuard)
+	@Roles(['user', 'artist'])
+	@HttpCode(HttpStatus.OK)
+	async getUserPlaylist(@SupabaseUser() sbUser: SbUser): Promise<Playlist[]> {
+		return (await this.usersService.findOneByUuidAndPopulateLibrary(sbUser.id))
+			.playlists as Playlist[];
 	}
 }
