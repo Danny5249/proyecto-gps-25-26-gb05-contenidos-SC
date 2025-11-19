@@ -10,6 +10,15 @@ export type UserDocument = HydratedDocument<User>;
 @Schema({
 	_id: false,
 	versionKey: false,
+	toJSON: {
+		transform: (doc, ret) => {
+			// @ts-ignore
+			const { _id, library, ...rest } = ret;
+			// @ts-ignore
+			rest.type = rest.type === 'Album' ? 'album' : 'song';
+			return rest;
+		},
+	},
 })
 export class LibraryItem {
 	@Prop({ required: true, enum: ['Song', 'Album'] })

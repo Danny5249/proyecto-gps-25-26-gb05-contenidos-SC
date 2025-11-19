@@ -3,16 +3,13 @@ import {
 	Body,
 	Controller,
 	Delete,
-	forwardRef,
 	Get,
 	HttpCode,
 	HttpStatus,
-	Inject,
 	Param,
 	Post,
-	Put,
+	Put, Query,
 	Res,
-	StreamableFile,
 	UnauthorizedException,
 	UploadedFiles,
 	UseGuards,
@@ -85,6 +82,83 @@ export class SongsController {
 		fileStream.on('error', () => {
 			res.status(500).send();
 		});
+	}
+
+	@Get(':uuid/play')
+	@Roles(['user', 'artist'])
+	@UseGuards(AuthGuard)
+	@HttpCode(HttpStatus.OK)
+	async playSong(
+		@Param('uuid') uuid: string,
+		@SupabaseUser() sbUser: SbUser,
+		@Res() res: Response,
+	) {
+		const song = await this.songsService.findOneByUuidAndPopulate(uuid);
+
+		if (sbUser.role === 'user') {
+			const user = await this.usersService.findOneByUuidAndPopulate(uuid);
+			const found = user.library.some((l) => l.item._id === song._id);
+			if (!found) throw new UnauthorizedException();
+		} else if (sbUser.role === 'artist') {
+			const artist = await this.usersService.findOneByUuid(sbUser.id);
+			if (artist.uuid !== (song.author as Artist).uuid) {
+				throw new UnauthorizedException();
+			}
+		}
+		const fileStream = await this.bucketService.getFromSongFilesAsStream(
+			`${uuid}-mp3-128`,
+		);
+
+		res.set({
+			'Content-Type': 'audio/mpeg',
+			'Content-Disposition': 'inline; filename="song.mp3"',
+			'Cache-Control': 'public, max-age=3600',
+		});
+
+		fileStream.pipe(res);
+		fileStream.on('error', () => {
+			res.status(500).send();
+		});
+	}
+
+	@Get(':uuid/download')
+	@Roles(['user', 'artist'])
+	@UseGuards(AuthGuard)
+	@HttpCode(HttpStatus.OK)
+	async downloadSong(
+		@Param('uuid') uuid: string,
+		@Query('format') format: SongFormats,
+		@SupabaseUser() sbUser: SbUser,
+		@Res() res: Response
+	) {
+		const song = await this.songsService.findOneByUuidAndPopulate(uuid);
+
+		if (sbUser.role === 'user') {
+			const user = await this.usersService.findOneByUuidAndPopulate(uuid);
+			const found = user.library.some((l) => l.item._id === song._id);
+			if (!found) throw new UnauthorizedException();
+		} else if (sbUser.role === 'artist') {
+			const artist = await this.usersService.findOneByUuid(sbUser.id);
+			if (artist.uuid !== (song.author as Artist).uuid) {
+				throw new UnauthorizedException();
+			}
+		}
+
+		const fileStream = await this.bucketService.getFromSongFilesAsStream(
+			`${uuid}-${format}`,
+		);
+
+		res.set({
+			'Content-Type': 'audio/mpeg',
+			'Content-Disposition': 'inline; filename="song.mp3"',
+			'Cache-Control': 'public, max-age=3600',
+		});
+
+		fileStream.pipe(res);
+		fileStream.on('error', () => {
+			res.status(500).send();
+		});
+
 	}
 
 	@Post()
@@ -194,33 +268,5 @@ export class SongsController {
 	@HttpCode(HttpStatus.OK)
 	async deleteFromUuid(@Param('uuid') uuid: string): Promise<void> {
 		return await this.songsService.deleteByUuid(uuid);
-	}
-
-	@Get(':uuid/download')
-	@Roles(['user', 'artist'])
-	@UseGuards(AuthGuard)
-	@HttpCode(HttpStatus.OK)
-	async downloadSong(
-		@Param('uuid') uuid: string,
-		@SupabaseUser() sbUser: SbUser,
-		@Res({ passthrough: true }) res: Response,
-	) {
-		const song = await this.songsService.findOneByUuidAndPopulate(uuid);
-		let found: boolean = false;
-
-		if (sbUser.role === 'user') {
-			const user = await this.usersService.findOneByUuidAndPopulate(uuid);
-			const found = user.library.some((l) => l.item._id === song._id);
-			if (!found) throw new UnauthorizedException();
-		} else if (sbUser.role === 'artist') {
-			const artist = await this.usersService.findOneByUuid(sbUser.id);
-			if (artist.uuid !== (song.author as Artist).uuid) {
-				throw new UnauthorizedException();
-			}
-		}
-		const fileStream = await this.songsService.download(uuid);
-
-		res.setHeader('Content-Type', 'audio/mpeg');
-		return new StreamableFile(fileStream as any);
 	}
 }

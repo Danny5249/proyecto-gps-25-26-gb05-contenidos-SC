@@ -184,8 +184,4 @@ export class SongsService {
 		await this.elasticsearchSyncService.delete('releases', 'song', uuid);
 		await this.songModel.deleteOne({ uuid });
 	}
-
-	async download(uuid: string): Promise<any> {
-		return await this.bucketService.getFileByUuid(uuid);
-	}
 }
