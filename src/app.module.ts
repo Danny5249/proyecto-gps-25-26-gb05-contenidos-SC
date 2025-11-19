@@ -10,6 +10,7 @@ import { PlaylistsModule } from './modules/playlists/playlists.module';
 import { ProductsModule } from './modules/products/products.module';
 import { SearchModule } from './modules/search/search.module';
 import { BullModule } from '@nestjs/bullmq';
+import { CacheModule } from '@nestjs/cache-manager';
 import { HelpModule } from './modules/help/help.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 

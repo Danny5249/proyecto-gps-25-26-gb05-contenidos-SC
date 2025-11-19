@@ -6,13 +6,20 @@ import {
 	UnauthorizedException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Song } from './schemas/song.schema';
+import { Song, SongFormats } from './schemas/song.schema';
 import { Model, Types } from 'mongoose';
 import { CreateSongDto } from './dto/create-song.dto';
 import { UpdateSongDto } from './dto/update-song.dto';
 import { ArtistsService } from '../artists/artists.service';
 import { ElasticsearchSyncService } from '../../common/services/elasticsearch-sync.service';
 import { GenresService } from '../genres/genres.service';
+import { BucketService } from '../../common/services/bucket.service';
+import { Readable } from 'stream';
+import { createWriteStream } from 'node:fs';
+import * as stream from 'node:stream';
+import { UsersService } from '../users/users.service';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 
 @Injectable()
 export class SongsService {
@@ -21,6 +28,7 @@ export class SongsService {
 		private readonly artistsService: ArtistsService,
 		private readonly genresService: GenresService,
 		private readonly elasticsearchSyncService: ElasticsearchSyncService,
+		private readonly bucketService: BucketService,
 	) {}
 
 	async isAuthor(artistUuid: string, songUuid: string) {
@@ -35,7 +43,9 @@ export class SongsService {
 
 	async findByAuthorUuid(authorUuid: string): Promise<Song[]> {
 		const artist = await this.artistsService.findOneByUuid(authorUuid);
-		return this.songModel.find({ author: artist._id });
+		return this.songModel
+			.find({ author: artist._id })
+			.populate(['author', 'featuring', 'genres']);
 	}
 
 	async findOneByUuid(uuid: string): Promise<Song> {
@@ -161,6 +171,13 @@ export class SongsService {
 		);
 
 		return populatedSong;
+	}
+
+	async addFormat(uuid: string, format: SongFormats) {
+		const song = await this.songModel.findOne({ uuid });
+		if (!song) throw new NotFoundException();
+		song.formats.push(format);
+		await song.save();
 	}
 
 	async deleteByUuid(uuid: string): Promise<void> {

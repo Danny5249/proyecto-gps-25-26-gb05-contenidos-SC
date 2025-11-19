@@ -2,12 +2,15 @@ import {
 	BadRequestException,
 	Body,
 	Controller,
+	Delete,
 	Get,
 	HttpCode,
 	HttpStatus,
 	Param,
 	Post,
-	Put,
+	Put, Query,
+	Res,
+	UnauthorizedException,
 	UploadedFiles,
 	UseGuards,
 	UseInterceptors,
@@ -15,18 +18,27 @@ import {
 import { SongsService } from './songs.service';
 import { CreateSongDto } from './dto/create-song.dto';
 import { UpdateSongDto } from './dto/update-song.dto';
-import { Song } from './schemas/song.schema';
+import { Song, SongFormats } from './schemas/song.schema';
 import { AuthGuard } from '../../auth/auth.guard';
 import { Roles } from '../../auth/roles.decorator';
-import {
-	FileFieldsInterceptor,
-} from '@nestjs/platform-express';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { BucketService } from '../../common/services/bucket.service';
 import { parseBuffer } from 'music-metadata';
 import { type User as SbUser } from '@supabase/supabase-js';
 import { SupabaseUser } from '../../auth/user.decorator';
+import { UsersService } from '../users/users.service';
+import { Artist } from '../artists/schemas/artist.schema';
+import type { Response } from 'express';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 
-const validSongFormats = ['audio/mpeg', 'audio/flac'];
+const validSongFormats = [
+	'audio/mpeg',
+	'audio/aac',
+	'audio/flac',
+	'audio/x-flac',
+	'audio/x-aac',
+];
 const validCoverFormats = ['image/jpg', 'image/jpeg', 'image/png'];
 
 @Controller('songs')
@@ -34,13 +46,16 @@ export class SongsController {
 	constructor(
 		private readonly songsService: SongsService,
 		private readonly bucketService: BucketService,
+		private readonly usersService: UsersService,
+		@InjectQueue('songPreview') private songPreviewQueue: Queue,
+		@InjectQueue('songTranscode') private songTranscodeQueue: Queue,
 	) {}
 
 	@Get()
 	@Roles(['artist'])
 	@UseGuards(AuthGuard)
 	@HttpCode(HttpStatus.OK)
-	async getSongsByAuthorUuid(@SupabaseUser() sbUser: SbUser) {
+	async getSongsByAuthorToken(@SupabaseUser() sbUser: SbUser) {
 		return this.songsService.findByAuthorUuid(sbUser.id);
 	}
 
@@ -48,6 +63,102 @@ export class SongsController {
 	@HttpCode(HttpStatus.OK)
 	async getSongByUuid(@Param('uuid') uuid: string): Promise<Song> {
 		return await this.songsService.findOneByUuidAndPopulate(uuid);
+	}
+
+	@Get(':uuid/preview')
+	@HttpCode(HttpStatus.OK)
+	async getSongPreviewByUuid(@Param('uuid') uuid: string, @Res() res: Response) {
+		const fileStream = await this.bucketService.getFromSongFilesAsStream(
+			`${uuid}-preview`,
+		);
+
+		res.set({
+			'Content-Type': 'audio/mpeg',
+			'Content-Disposition': 'inline; filename="preview.mp3"',
+			'Cache-Control': 'public, max-age=3600',
+		});
+
+		fileStream.pipe(res);
+		fileStream.on('error', () => {
+			res.status(500).send();
+		});
+	}
+
+	@Get(':uuid/play')
+	@Roles(['user', 'artist'])
+	@UseGuards(AuthGuard)
+	@HttpCode(HttpStatus.OK)
+	async playSong(
+		@Param('uuid') uuid: string,
+		@SupabaseUser() sbUser: SbUser,
+		@Res() res: Response,
+	) {
+		const song = await this.songsService.findOneByUuidAndPopulate(uuid);
+
+		if (sbUser.role === 'user') {
+			const user = await this.usersService.findOneByUuidAndPopulate(uuid);
+			const found = user.library.some((l) => l.item._id === song._id);
+			if (!found) throw new UnauthorizedException();
+		} else if (sbUser.role === 'artist') {
+			const artist = await this.usersService.findOneByUuid(sbUser.id);
+			if (artist.uuid !== (song.author as Artist).uuid) {
+				throw new UnauthorizedException();
+			}
+		}
+		const fileStream = await this.bucketService.getFromSongFilesAsStream(
+			`${uuid}-mp3-128`,
+		);
+
+		res.set({
+			'Content-Type': 'audio/mpeg',
+			'Content-Disposition': 'inline; filename="song.mp3"',
+			'Cache-Control': 'public, max-age=3600',
+		});
+
+		fileStream.pipe(res);
+		fileStream.on('error', () => {
+			res.status(500).send();
+		});
+	}
+
+	@Get(':uuid/download')
+	@Roles(['user', 'artist'])
+	@UseGuards(AuthGuard)
+	@HttpCode(HttpStatus.OK)
+	async downloadSong(
+		@Param('uuid') uuid: string,
+		@Query('format') format: SongFormats,
+		@SupabaseUser() sbUser: SbUser,
+		@Res() res: Response
+	) {
+		const song = await this.songsService.findOneByUuidAndPopulate(uuid);
+
+		if (sbUser.role === 'user') {
+			const user = await this.usersService.findOneByUuidAndPopulate(uuid);
+			const found = user.library.some((l) => l.item._id === song._id);
+			if (!found) throw new UnauthorizedException();
+		} else if (sbUser.role === 'artist') {
+			const artist = await this.usersService.findOneByUuid(sbUser.id);
+			if (artist.uuid !== (song.author as Artist).uuid) {
+				throw new UnauthorizedException();
+			}
+		}
+
+		const fileStream = await this.bucketService.getFromSongFilesAsStream(
+			`${uuid}-${format}`,
+		);
+
+		res.set({
+			'Content-Type': 'audio/mpeg',
+			'Content-Disposition': 'inline; filename="song.mp3"',
+			'Cache-Control': 'public, max-age=3600',
+		});
+
+		fileStream.pipe(res);
+		fileStream.on('error', () => {
+			res.status(500).send();
+		});
+
 	}
 
 	@Post()
@@ -101,8 +212,41 @@ export class SongsController {
 			author: sbUser.id,
 		});
 
-		await this.bucketService.saveToSongFiles(song.uuid, file);
+		await this.bucketService.saveToSongFiles(
+			song.uuid,
+			file.buffer,
+			file.mimetype,
+		);
 		await this.bucketService.saveToSongCovers(song.uuid, cover);
+
+		this.songPreviewQueue.add('songPreview', {
+			uuid: song.uuid,
+		});
+
+		this.songTranscodeQueue.add('songTranscode', {
+			uuid: song.uuid,
+			format: SongFormats.MP3320,
+		});
+		this.songTranscodeQueue.add('songTranscode', {
+			uuid: song.uuid,
+			format: SongFormats.MP3128,
+		});
+
+		if (file.mimetype === 'audio/flac' || file.mimetype === 'audio/x-flac') {
+			this.songTranscodeQueue.add('songTranscode', {
+				uuid: song.uuid,
+				format: SongFormats.AAC,
+			});
+			this.songTranscodeQueue.add('songTranscode', {
+				uuid: song.uuid,
+				format: SongFormats.FLAC,
+			});
+		} else if (file.mimetype === 'audio/aac' || file.mimetype === 'audio/x-aac') {
+			this.songTranscodeQueue.add('songTranscode', {
+				uuid: song.uuid,
+				format: SongFormats.AAC,
+			});
+		}
 
 		return song;
 	}
@@ -116,5 +260,13 @@ export class SongsController {
 		@Body() updateSongDto: UpdateSongDto,
 	): Promise<Song> {
 		return await this.songsService.update(uuid, updateSongDto);
+	}
+
+	@Delete(':uuid')
+	@Roles(['artist'])
+	@UseGuards(AuthGuard)
+	@HttpCode(HttpStatus.OK)
+	async deleteFromUuid(@Param('uuid') uuid: string): Promise<void> {
+		return await this.songsService.deleteByUuid(uuid);
 	}
 }

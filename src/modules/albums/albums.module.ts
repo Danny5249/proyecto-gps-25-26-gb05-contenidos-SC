@@ -11,10 +11,12 @@ import { ArtistsModule } from '../artists/artists.module';
 import { ElasticsearchSyncService } from '../../common/services/elasticsearch-sync.service';
 import { SearchModule } from '../search/search.module';
 import { GenresModule } from '../genres/genres.module';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
 	imports: [
 		MongooseModule.forFeature([{ name: Album.name, schema: AlbumSchema }]),
+		CacheModule.register(),
 		forwardRef(() => SongsModule),
 		HttpModule,
 		ArtistsModule,
