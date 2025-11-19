@@ -1,9 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from './schemas/user.schema';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { Playlist } from '../playlists/schemas/playlist.schema';
 
 @Injectable()
 export class UsersService {
@@ -42,5 +43,34 @@ export class UsersService {
 
 	async remove(id: string): Promise<void> {
 		await this.userModel.findByIdAndDelete(id);
+	}
+
+	async addPlaylistToUser(userUuid: string, playlist: Playlist) {
+		const uuid = await this.findOneByUuid(userUuid).then((user) => user.uuid);
+		const user = await this.userModel.findOne({ uuid });
+		if (!user) throw new NotFoundException();
+
+		const playlists = user.playlists as Types.ObjectId[];
+		playlists.push(playlist._id);
+		await user.save();
+	}
+
+	async removePlaylistToUser(sbUser: string, playlist: Playlist) {
+		const uuid = await this.findOneByUuid(sbUser).then((user) => user.uuid);
+		const user = await this.userModel.findOne({ uuid });
+
+		if (!user) throw new NotFoundException();
+
+		const playlists = user.playlists as Types.ObjectId[];
+		user.playlists = playlists.filter(
+			(p) => p.toString() !== playlist._id.toString(),
+		);
+		await user.save();
+	}
+
+	async findOneByUuidAndPopulateLibrary(uuid: string) {
+		const user = await this.userModel.findOne({ uuid }).populate('playlists');
+		if (!user) throw NotFoundException;
+		return user;
 	}
 }
