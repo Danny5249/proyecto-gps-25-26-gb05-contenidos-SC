@@ -8,10 +8,12 @@ import { ServiceTokenProvider } from '../../common/providers/service-token.provi
 import { SongsModule } from '../songs/songs.module';
 import { AlbumsModule } from '../albums/albums.module';
 import { UsersModule } from '../users/users.module';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
 	imports: [
 		MongooseModule.forFeature([{ name: Review.name, schema: ReviewSchema }]),
+		CacheModule.register(),
 		HttpModule,
 		SongsModule,
 		AlbumsModule,

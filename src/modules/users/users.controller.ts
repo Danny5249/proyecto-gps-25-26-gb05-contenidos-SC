@@ -20,6 +20,7 @@ import { SupabaseUser } from '../../auth/user.decorator';
 import { type User as SbUser } from '@supabase/supabase-js';
 import { UpdateLibraryDto } from './dto/update-library.dto';
 import { Playlist } from '../playlists/schemas/playlist.schema';
+import { Notification } from '../../common/schemas/notification.schema';
 
 @Controller('users')
 export class UsersController {
@@ -39,6 +40,36 @@ export class UsersController {
 	@HttpCode(HttpStatus.OK)
 	async getUserLibrary(@SupabaseUser() sbUser: SbUser) {
 		return (await this.usersService.findOneByUuidAndPopulate(sbUser.id)).library;
+	}
+
+	@Get('playlists')
+	@Roles(['user', 'artist'])
+	@UseGuards(AuthGuard)
+	@HttpCode(HttpStatus.OK)
+	async getUserPlaylist(@SupabaseUser() sbUser: SbUser) {
+		return (await this.usersService.findOneByUuidAndPopulateLibrary(sbUser.id))
+			.playlists as Playlist[];
+	}
+
+	@Delete('notifications/:uuid')
+	@Roles(['user', 'artist'])
+	@UseGuards(AuthGuard)
+	@HttpCode(HttpStatus.OK)
+	async deleteUserNotification(
+		@SupabaseUser() sbUser: SbUser,
+		@Param('uuid') uuid: string,
+	) {
+		return await this.usersService.deleteNotification(sbUser.id, uuid);
+	}
+
+	@Get('notifications')
+	@Roles(['user', 'artist'])
+	@UseGuards(AuthGuard)
+	@HttpCode(HttpStatus.OK)
+	async getUserNotifications(@SupabaseUser() sbUser: SbUser) {
+		return (
+			await this.usersService.findOneByUuidAndPopulateNotifications(sbUser.id)
+		).notifications as Notification[];
 	}
 
 	@Get(':uuid')
@@ -86,14 +117,5 @@ export class UsersController {
 	@HttpCode(HttpStatus.OK)
 	async deleteUserByUuid(@Param('uuid') uuid: string) {
 		return await this.usersService.delete(uuid);
-  }
-  
-	@Get('playlists')
-	@UseGuards(AuthGuard)
-	@Roles(['user', 'artist'])
-	@HttpCode(HttpStatus.OK)
-	async getUserPlaylist(@SupabaseUser() sbUser: SbUser): Promise<Playlist[]> {
-		return (await this.usersService.findOneByUuidAndPopulateLibrary(sbUser.id))
-			.playlists as Playlist[];
 	}
 }

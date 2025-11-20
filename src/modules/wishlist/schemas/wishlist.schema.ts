@@ -4,30 +4,30 @@ import { HydratedDocument, Types } from 'mongoose';
 export type WishlistDocument = HydratedDocument<Wishlist>;
 
 export interface WishlistItem {
-    uuid: string;
-    title: string;
-    type: 'song' | 'album' | 'product';
-    img: string;
-    price: number;
+	uuid: string;
+	title: string;
+	type: 'song' | 'album' | 'product';
+	img: string;
+	price: number;
 }
 
 @Schema({
-    versionKey: false,
-    toJSON: {
-        transform: (doc, ret) => {
-            const { _id, ...rest } = ret;
-            return rest;
-        }
-    }
+	versionKey: false,
+	toJSON: {
+		transform: (doc, ret) => {
+			const { _id, ...rest } = ret;
+			return rest;
+		},
+	},
 })
 export class Wishlist {
-    _id: Types.ObjectId;
+	_id: Types.ObjectId;
 
-    @Prop({ required: true, unique: true })
-    userUuid: string;
+	@Prop({ required: true, unique: true })
+	userUuid: string;
 
-    @Prop({ required: true, default: [] })
-    items: WishlistItem[];
+	@Prop({ required: true, default: [] })
+	items: WishlistItem[];
 }
 
 export const WishlistSchema = SchemaFactory.createForClass(Wishlist);

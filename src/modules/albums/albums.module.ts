@@ -12,6 +12,9 @@ import { ElasticsearchSyncService } from '../../common/services/elasticsearch-sy
 import { SearchModule } from '../search/search.module';
 import { GenresModule } from '../genres/genres.module';
 import { CacheModule } from '@nestjs/cache-manager';
+import { NotificationService } from '../../common/services/notification.service';
+import { UsersService } from '../users/users.service';
+import { UsersModule } from '../users/users.module';
 
 @Module({
 	imports: [
@@ -22,9 +25,15 @@ import { CacheModule } from '@nestjs/cache-manager';
 		ArtistsModule,
 		forwardRef(() => SearchModule),
 		GenresModule,
+		forwardRef(() => UsersModule),
 	],
 	controllers: [AlbumsController],
-	providers: [AlbumsService, ServiceTokenProvider, BucketService],
+	providers: [
+		AlbumsService,
+		ServiceTokenProvider,
+		BucketService,
+		NotificationService,
+	],
 	exports: [AlbumsService],
 })
 export class AlbumsModule {}
