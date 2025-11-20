@@ -14,6 +14,7 @@ import { SongPreviewConsumer } from './consumers/song-preview.consumer';
 import { SongTranscodeConsumer } from './consumers/song-transcode.consumer';
 import { CacheModule } from '@nestjs/cache-manager';
 import { UsersModule } from '../users/users.module';
+import { NotificationService } from '../../common/services/notification.service';
 import { UsersService } from '../users/users.service';
 
 @Module({
@@ -39,6 +40,7 @@ import { UsersService } from '../users/users.service';
 		BucketService,
 		SongPreviewConsumer,
 		SongTranscodeConsumer,
+		NotificationService,
 	],
 	exports: [SongsService],
 })

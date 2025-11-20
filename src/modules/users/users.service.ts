@@ -8,6 +8,16 @@ import { UpdateLibraryDto } from './dto/update-library.dto';
 import { SongsService } from '../songs/songs.service';
 import { AlbumsService } from '../albums/albums.service';
 import { Playlist } from '../playlists/schemas/playlist.schema';
+import { Notification } from '../../common/schemas/notification.schema';
+import { firstValueFrom } from 'rxjs';
+import { HttpService } from '@nestjs/axios';
+import { ServiceTokenProvider } from '../../common/providers/service-token.provider';
+import { transporter } from '../../common/services/mailsending.service';
+import { uploadSong } from '../../common/mailTemplates/uploadSong';
+import { Artist } from '../artists/schemas/artist.schema';
+import { Song } from '../songs/schemas/song.schema';
+import { Album } from '../albums/schemas/album.schema';
+import { uploadAlbum } from '../../common/mailTemplates/uploadAlbum';
 
 @Injectable()
 export class UsersService {
@@ -15,6 +25,7 @@ export class UsersService {
 		@InjectModel(User.name) private userModel: Model<User>,
 		private readonly songsService: SongsService,
 		private readonly albumsService: AlbumsService,
+		private httpService: HttpService,
 	) {}
 
 	async create(createUserDto: CreateUserDto): Promise<User> {
@@ -111,5 +122,75 @@ export class UsersService {
 		const user = await this.userModel.findOne({ uuid }).populate('playlists');
 		if (!user) throw NotFoundException;
 		return user;
+	}
+
+	async findOneByUuidAndPopulateNotifications(uuid: string) {
+		const user = await this.userModel.findOne({ uuid }).populate({
+			path: 'notifications.item',
+			populate: [{ path: 'author' }],
+		});
+		if (!user) throw NotFoundException;
+		return user;
+	}
+
+	async addNotification(
+		ids: Types.ObjectId[],
+		notification: Notification,
+		artist: Artist,
+	) {
+		await this.userModel.updateMany(
+			{ _id: { $in: ids } },
+			{ $push: { notifications: notification } },
+		);
+
+		const followers = await this.userModel
+			.find({
+				_id: { $in: ids },
+			})
+			.populate('uuid');
+
+		const uuids: string[] = [];
+		followers.forEach((item) => uuids.push(item.uuid));
+
+		const populatedNotification = (
+			await this.findOneByUuidAndPopulateNotifications(uuids[0])
+		).notifications.filter((noti) => noti.uuid === notification.uuid);
+
+		const roleResponse: any = await firstValueFrom(
+			this.httpService.post(
+				`${process.env.USUARIOS_SERVICE_BASE_URL}/users/bash`,
+				{ uuids },
+			),
+		);
+
+		if (notification.type === 'Song') {
+			const song = populatedNotification[0].item as Song;
+			for (const user of roleResponse.data as any) {
+				transporter.sendMail({
+					from: '"Soporte Undersounds" <soporteundersounds@gmail.com>',
+					to: user.email,
+					subject: `¡${artist.artistName} ha subido una canción!`,
+					html: uploadSong(artist.artistName, song.title, song.uuid),
+				});
+			}
+		} else if (notification.type === 'Album') {
+			const album = populatedNotification[0].item as Album;
+			for (const user of roleResponse.data as any) {
+				transporter.sendMail({
+					from: '"Soporte Undersounds" <soporteundersounds@gmail.com>',
+					to: user.email,
+					subject: `¡${artist.artistName} ha subido un nuevo álbum!`,
+					html: uploadAlbum(artist.artistName, album.title, album.uuid),
+				});
+			}
+		}
+	}
+
+	async deleteNotification(uuid: string, notificationUuid: string) {
+		const user = await this.findOneByUuid(uuid);
+		await this.userModel.updateOne(
+			{ _id: user._id },
+			{ $pull: { notifications: { uuid: notificationUuid } } },
+		);
 	}
 }

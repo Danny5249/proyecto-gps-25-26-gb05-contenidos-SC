@@ -4,6 +4,7 @@ import { Playlist } from '../../playlists/schemas/playlist.schema';
 import { Artist } from '../../artists/schemas/artist.schema';
 import { Song } from '../../songs/schemas/song.schema';
 import { Album } from '../../albums/schemas/album.schema';
+import { Notification } from '../../../common/schemas/notification.schema';
 
 export type UserDocument = HydratedDocument<User>;
 
@@ -13,7 +14,7 @@ export type UserDocument = HydratedDocument<User>;
 	toJSON: {
 		transform: (doc, ret) => {
 			// @ts-ignore
-			const { _id, library, ...rest } = ret;
+			const { _id, library, notification, ...rest } = ret;
 			// @ts-ignore
 			rest.type = rest.type === 'Album' ? 'album' : 'song';
 			return rest;
@@ -49,7 +50,9 @@ export class User {
 	@Prop({ unique: true, required: true })
 	username: string;
 
-	@Prop({ default: `${process.env.APP_BASE_URL}/static/public/user-profiles/default.jpg` })
+	@Prop({
+		default: `${process.env.APP_BASE_URL}/static/public/user-profiles/default.jpg`,
+	})
 	profileImg: string;
 
 	@Prop({ type: [Types.ObjectId], ref: 'Playlist' })
@@ -60,6 +63,9 @@ export class User {
 
 	@Prop({ type: [LibraryItemSchema] })
 	library: LibraryItem[];
+
+	@Prop({ type: [Notification] })
+	notifications: Notification[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

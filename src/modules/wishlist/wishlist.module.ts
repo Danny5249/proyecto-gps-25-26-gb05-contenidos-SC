@@ -7,11 +7,11 @@ import { HttpModule } from '@nestjs/axios';
 import { ServiceTokenProvider } from '../../common/providers/service-token.provider';
 
 @Module({
-    imports: [
-        MongooseModule.forFeature([{ name: Wishlist.name, schema: WishlistSchema }]),
-        HttpModule,
-    ],
-    controllers: [WishlistController],
-    providers: [WishlistService, ServiceTokenProvider],
+	imports: [
+		MongooseModule.forFeature([{ name: Wishlist.name, schema: WishlistSchema }]),
+		HttpModule,
+	],
+	controllers: [WishlistController],
+	providers: [WishlistService, ServiceTokenProvider],
 })
 export class WishlistModule {}

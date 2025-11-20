@@ -15,7 +15,7 @@ import { CacheModule } from '@nestjs/cache-manager';
 		CacheModule.register(),
 		HttpModule,
 		forwardRef(() => SongsModule),
-		AlbumsModule,
+		forwardRef(() => AlbumsModule),
 	],
 	controllers: [UsersController],
 	providers: [UsersService, ServiceTokenProvider],

@@ -8,7 +8,8 @@ import {
 	HttpStatus,
 	Param,
 	Post,
-	Put, Query,
+	Put,
+	Query,
 	Res,
 	UnauthorizedException,
 	UploadedFiles,
@@ -31,6 +32,9 @@ import { Artist } from '../artists/schemas/artist.schema';
 import type { Response } from 'express';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
+import { NotificationService } from '../../common/services/notification.service';
+import { Notification } from '../../common/schemas/notification.schema';
+import { v4 as uuidv4 } from 'uuid';
 
 const validSongFormats = [
 	'audio/mpeg',
@@ -47,6 +51,7 @@ export class SongsController {
 		private readonly songsService: SongsService,
 		private readonly bucketService: BucketService,
 		private readonly usersService: UsersService,
+		private readonly notificationService: NotificationService,
 		@InjectQueue('songPreview') private songPreviewQueue: Queue,
 		@InjectQueue('songTranscode') private songTranscodeQueue: Queue,
 	) {}
@@ -129,7 +134,7 @@ export class SongsController {
 		@Param('uuid') uuid: string,
 		@Query('format') format: SongFormats,
 		@SupabaseUser() sbUser: SbUser,
-		@Res() res: Response
+		@Res() res: Response,
 	) {
 		const song = await this.songsService.findOneByUuidAndPopulate(uuid);
 
@@ -158,7 +163,6 @@ export class SongsController {
 		fileStream.on('error', () => {
 			res.status(500).send();
 		});
-
 	}
 
 	@Post()
@@ -248,6 +252,14 @@ export class SongsController {
 			});
 		}
 
+		const notification: Notification = {
+			message: 'Se ha publicado una nueva canción !!',
+			type: 'Song',
+			item: song._id,
+			uuid: uuidv4(),
+		};
+
+		await this.notificationService.notifyFollowers(sbUser.id, notification);
 		return song;
 	}
 
