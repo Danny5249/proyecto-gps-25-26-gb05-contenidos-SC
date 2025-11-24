@@ -13,6 +13,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { CacheModule } from '@nestjs/cache-manager';
 import { HelpModule } from './modules/help/help.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
+import {WishlistModule} from "./modules/wishlist/wishlist.module";
 
 @Module({
 	imports: [
@@ -34,6 +35,7 @@ import { ReviewsModule } from './modules/reviews/reviews.module';
 		SearchModule,
 		HelpModule,
 		ReviewsModule,
+        WishlistModule,
 	],
 })
 export class AppModule {}

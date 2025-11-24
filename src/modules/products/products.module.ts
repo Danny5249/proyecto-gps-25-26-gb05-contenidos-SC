@@ -30,5 +30,6 @@ import { CacheModule } from '@nestjs/cache-manager';
 		ProductPreviewConsumer,
 		ServiceTokenProvider,
 	],
+    exports: [ProductsService]
 })
 export class ProductsModule {}
