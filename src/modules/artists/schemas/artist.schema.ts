@@ -1,5 +1,6 @@
 import { HydratedDocument, Types } from 'mongoose';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { User } from '@supabase/supabase-js';
 
 export type ArtistDocument = HydratedDocument<Artist>;
 
@@ -29,6 +30,9 @@ export class Artist {
 
 	@Prop({ default: '' })
 	biography: string;
+
+	@Prop({ type: [Types.ObjectId], ref: 'User' })
+	followers: User[] | Types.ObjectId[];
 }
 
 export const ArtistSchema = SchemaFactory.createForClass(Artist);

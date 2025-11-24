@@ -1,16 +1,42 @@
 import { HydratedDocument, Types } from 'mongoose';
-import { v4 as uuidv4 } from 'uuid';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Playlist } from '../../playlists/schemas/playlist.schema';
 import { Artist } from '../../artists/schemas/artist.schema';
+import { Song } from '../../songs/schemas/song.schema';
+import { Album } from '../../albums/schemas/album.schema';
+import { Notification } from '../../../common/schemas/notification.schema';
 
 export type UserDocument = HydratedDocument<User>;
+
+@Schema({
+	_id: false,
+	versionKey: false,
+	toJSON: {
+		transform: (doc, ret) => {
+			// @ts-ignore
+			const { _id, library, notification, ...rest } = ret;
+			// @ts-ignore
+			rest.type = rest.type === 'Album' ? 'album' : 'song';
+			return rest;
+		},
+	},
+})
+export class LibraryItem {
+	@Prop({ required: true, enum: ['Song', 'Album'] })
+	type: string;
+
+	@Prop({ type: Types.ObjectId, required: true, refPath: 'library.type' })
+	item: Types.ObjectId | Song | Album;
+}
+
+export const LibraryItemSchema = SchemaFactory.createForClass(LibraryItem);
 
 @Schema({
 	versionKey: false,
 	toJSON: {
 		transform: (doc, ret) => {
-			const { _id, ...rest } = ret;
+			// @ts-ignore
+			const { _id, library, ...rest } = ret;
 			return rest;
 		},
 	},
@@ -24,7 +50,9 @@ export class User {
 	@Prop({ unique: true, required: true })
 	username: string;
 
-	@Prop({ default: '' })
+	@Prop({
+		default: `${process.env.APP_BASE_URL}/static/public/user-profiles/default.jpg`,
+	})
 	profileImg: string;
 
 	@Prop({ type: [Types.ObjectId], ref: 'Playlist' })
@@ -32,6 +60,12 @@ export class User {
 
 	@Prop({ type: [Types.ObjectId], ref: 'Artist' })
 	following: Artist[] | Types.ObjectId[];
+
+	@Prop({ type: [LibraryItemSchema] })
+	library: LibraryItem[];
+
+	@Prop({ type: [Notification] })
+	notifications: Notification[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
