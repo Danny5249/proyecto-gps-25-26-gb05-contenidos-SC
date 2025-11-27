@@ -45,11 +45,20 @@ export class SongsService {
 		const artist = await this.artistsService.findOneByUuid(authorUuid);
 		return this.songModel
 			.find({ author: artist._id })
+			.sort({ releaseDate: -1 })
 			.populate(['author', 'featuring', 'genres']);
 	}
 
 	async findOneByUuid(uuid: string): Promise<Song> {
 		const song = await this.songModel.findOne({ uuid });
+		if (!song) throw new NotFoundException();
+		return song;
+	}
+
+	async findOneByIdAndPopulate(id: Types.ObjectId): Promise<Song> {
+		const song = await this.songModel
+			.findById(id)
+			.populate(['author', 'featuring', 'genres']);
 		if (!song) throw new NotFoundException();
 		return song;
 	}

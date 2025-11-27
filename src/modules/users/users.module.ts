@@ -8,6 +8,7 @@ import { ServiceTokenProvider } from '../../common/providers/service-token.provi
 import { SongsModule } from '../songs/songs.module';
 import { AlbumsModule } from '../albums/albums.module';
 import { CacheModule } from '@nestjs/cache-manager';
+import {ProductsModule} from "../products/products.module";
 
 @Module({
 	imports: [
@@ -16,6 +17,7 @@ import { CacheModule } from '@nestjs/cache-manager';
 		HttpModule,
 		forwardRef(() => SongsModule),
 		forwardRef(() => AlbumsModule),
+		forwardRef(() => ProductsModule),
 	],
 	controllers: [UsersController],
 	providers: [UsersService, ServiceTokenProvider],

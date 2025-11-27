@@ -38,6 +38,7 @@ export class AlbumsService {
 		const artist = await this.artistsService.findOneByUuid(uuid);
 		return this.albumModel
 			.find({ author: artist._id })
+			.sort({ releaseDate: -1 })
 			.populate(['author', 'genres'])
 			.populate({
 				path: 'songs',
@@ -48,6 +49,18 @@ export class AlbumsService {
 	async findOneByUuid(uuid: string): Promise<Album> {
 		const album = await this.albumModel.findOne({ uuid });
 		if (!album) throw new NotFoundException();
+		return album;
+	}
+
+	async findOneByIdAndPopulate(id: Types.ObjectId): Promise<Album> {
+		const album = await this.albumModel
+			.findById(id)
+			.populate(['author', 'genres'])
+			.populate({
+				path: 'songs',
+				populate: [{ path: 'author' }, { path: 'featuring' }, { path: 'genres' }],
+			});
+		if (!album) throw NotFoundException;
 		return album;
 	}
 

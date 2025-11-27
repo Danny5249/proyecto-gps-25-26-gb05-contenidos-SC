@@ -21,6 +21,7 @@ import { type User as SbUser } from '@supabase/supabase-js';
 import { UpdateLibraryDto } from './dto/update-library.dto';
 import { Playlist } from '../playlists/schemas/playlist.schema';
 import { Notification } from '../../common/schemas/notification.schema';
+import {AddToWishlistDto} from "./dto/add-to-wishlist.dto";
 
 @Controller('users')
 export class UsersController {
@@ -70,6 +71,36 @@ export class UsersController {
 		return (
 			await this.usersService.findOneByUuidAndPopulateNotifications(sbUser.id)
 		).notifications as Notification[];
+	}
+
+	@Get('wishlist')
+	@Roles(['user', 'artist'])
+	@UseGuards(AuthGuard)
+	@HttpCode(HttpStatus.OK)
+	async getWishlist(@SupabaseUser() sbUser: SbUser) {
+		return await this.usersService.getWishlist(sbUser.id);
+	}
+
+	@Post('wishlist')
+	@Roles(['user', 'artist'])
+	@UseGuards(AuthGuard)
+	@HttpCode(HttpStatus.OK)
+	async addToWishlist(
+		@SupabaseUser() sbUser: SbUser,
+		@Body() addToWishlistDto: AddToWishlistDto
+	) {
+		return await this.usersService.addToWishlist(sbUser.id, addToWishlistDto);
+	}
+
+	@Delete('wishlist/:uuid')
+	@Roles(['user', 'artist'])
+	@UseGuards(AuthGuard)
+	@HttpCode(HttpStatus.OK)
+	async deleteFromWishlist(
+		@SupabaseUser() sbUser: SbUser,
+		@Param('uuid') uuid: string
+	) {
+		return await this.usersService.deleteFromWishlist(sbUser.id, uuid);
 	}
 
 	@Get(':uuid')

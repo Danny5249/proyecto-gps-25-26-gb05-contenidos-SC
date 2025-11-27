@@ -13,6 +13,7 @@ import { SongsService } from '../songs/songs.service';
 import { AlbumsService } from '../albums/albums.service';
 import { Artist } from '../artists/schemas/artist.schema';
 import { UpdateProductDto } from './dto/update-product.dto';
+import {ArtistsService} from "../artists/artists.service";
 
 @Injectable()
 export class ProductsService {
@@ -27,9 +28,47 @@ export class ProductsService {
 		return this.productModel.find();
 	}
 
+	async findByAuthorUuid(uuid: string): Promise<Product[]> {
+		const songs = await this.songsService.findByAuthorUuid(uuid);
+		const albums = await this.albumsService.findByAuthorUuid(uuid);
+
+		return this.productModel.find({
+			$or: [
+				{ reference: { $in: songs.map(s => s._id) }, refPath: 'Song' },
+				{ reference: { $in: albums.map(a => a._id) }, refPath: 'Album' }
+			]
+		})
+	}
+
 	async findOneByUuid(uuid: string): Promise<Product> {
 		const product = await this.productModel.findOne({ uuid });
 		if (!product) throw new NotFoundException();
+		return product;
+	}
+
+	async findOneByIdAndPopulate(id: Types.ObjectId): Promise<Product> {
+		let product = await this.productModel.findById(id);
+		if (!product) throw new NotFoundException();
+
+		if (product.referenceType === 'song') {
+			product = await product.populate({
+				path: 'reference',
+				populate: [{ path: 'author' }, { path: 'genres' }, { path: 'featuring' }],
+			});
+		} else if (product.referenceType === 'album') {
+			product = await product.populate({
+				path: 'reference',
+				populate: [
+					{ path: 'author' },
+					{ path: 'genres' },
+					{
+						path: 'songs',
+						populate: [{ path: 'author' }, { path: 'featuring' }, { path: 'genres' }],
+					},
+				],
+			});
+		}
+
 		return product;
 	}
 
