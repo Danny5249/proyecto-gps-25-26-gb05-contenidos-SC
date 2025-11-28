@@ -125,7 +125,7 @@ export class SongsService {
 	async update(uuid: string, updateSongDto: UpdateSongDto): Promise<Song> {
 		const song = await this.findOneByUuid(uuid);
 		const artist = await this.artistsService.findOneById(song.author.toString());
-		if (!(await this.isAuthor(updateSongDto.author!, artist.uuid))) {
+		if (artist.uuid !== updateSongDto.author) {
 			throw new UnauthorizedException();
 		}
 
@@ -149,11 +149,18 @@ export class SongsService {
 		const updatedSong = await this.songModel.findOneAndUpdate(
 			{ uuid },
 			{
-				...song,
 				...updateSongDto,
-				featuring: updateSongDto.featuring ? song.featuring : featIds,
-				genres: updateSongDto.genres ? song.genres : genreIds,
+				author: song.author,
+				featuring: updateSongDto.featuring ? featIds : song.featuring,
+				genres: updateSongDto.genres ? genreIds : song.genres,
+				pricing: {
+					cd: updateSongDto.pricing?.cd ?? song.pricing.cd,
+					vinyl: updateSongDto.pricing?.vinyl ?? song.pricing.vinyl,
+					cassette: updateSongDto.pricing?.cassette ?? song.pricing.cassette,
+					digital: updateSongDto.pricing?.digital ?? song.pricing.digital
+				}
 			},
+			{ new: true }
 		);
 		const populatedSong = await this.findOneByUuidAndPopulate(updatedSong!.uuid);
 		const aux: any = (populatedSong as any).toObject();

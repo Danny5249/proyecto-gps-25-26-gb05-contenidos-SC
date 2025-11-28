@@ -143,6 +143,7 @@ export class AlbumsService {
 		const album = await this.findOneByUuid(uuid);
 		const songIds: Types.ObjectId[] = [];
 		const genreIds: Types.ObjectId[] = [];
+		console.log(updateAlbumDto);
 
 		if (!(await this.isAuthor(updateAlbumDto.author!, uuid))) {
 			throw new UnauthorizedException();
@@ -170,11 +171,12 @@ export class AlbumsService {
 		const updatedAlbum = await this.albumModel.findOneAndUpdate(
 			{ uuid },
 			{
-				...album,
 				...updateAlbumDto,
-				songs: updateAlbumDto.songs ? album.songs : songIds,
-				genres: updateAlbumDto.songs ? album.genres : genreIds,
+				author: album.author,
+				songs: updateAlbumDto.songs ? songIds : album.songs,
+				genres: updateAlbumDto.songs ? genreIds : album.genres,
 			},
+			{ new: true }
 		);
 
 		const populatedAlbum = await this.findOneByUuidAndPopulate(
@@ -205,5 +207,10 @@ export class AlbumsService {
 		);
 
 		return populatedAlbum;
+	}
+
+	async deleteByUuid(uuid: string): Promise<void> {
+		await this.elasticsearchSyncService.delete('releases', 'album', uuid);
+		await this.albumModel.findOneAndDelete({ uuid });
 	}
 }

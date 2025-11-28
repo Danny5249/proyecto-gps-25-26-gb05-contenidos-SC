@@ -270,7 +270,9 @@ export class SongsController {
 	async update(
 		@Param('uuid') uuid: string,
 		@Body() updateSongDto: UpdateSongDto,
+		@SupabaseUser() sbUser: SbUser
 	): Promise<Song> {
+		updateSongDto.author = sbUser.id;
 		return await this.songsService.update(uuid, updateSongDto);
 	}
 
@@ -278,7 +280,13 @@ export class SongsController {
 	@Roles(['artist'])
 	@UseGuards(AuthGuard)
 	@HttpCode(HttpStatus.OK)
-	async deleteFromUuid(@Param('uuid') uuid: string): Promise<void> {
+	async deleteFromUuid(
+		@Param('uuid') uuid: string,
+		@SupabaseUser() sbUser: SbUser
+	): Promise<void> {
+		if (!(await this.songsService.isAuthor(sbUser.id, uuid))) {
+			throw new UnauthorizedException();
+		}
 		return await this.songsService.deleteByUuid(uuid);
 	}
 }
