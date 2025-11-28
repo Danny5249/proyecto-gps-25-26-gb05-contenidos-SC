@@ -200,4 +200,11 @@ export class SongsService {
 		await this.elasticsearchSyncService.delete('releases', 'song', uuid);
 		await this.songModel.deleteOne({ uuid });
 	}
+
+    async incrementPlays(uuid: string): Promise<void> {
+        const song = await this.songModel.findOne({uuid})
+        if(!song) throw new NotFoundException();
+        song.plays++
+        await song.save()
+    }
 }

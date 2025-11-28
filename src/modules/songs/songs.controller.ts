@@ -114,6 +114,8 @@ export class SongsController {
 			`${uuid}-mp3-128`,
 		);
 
+        await this.songsService.incrementPlays(uuid)
+
 		res.set({
 			'Content-Type': 'audio/mpeg',
 			'Content-Disposition': 'inline; filename="song.mp3"',
