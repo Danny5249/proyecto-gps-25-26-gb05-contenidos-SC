@@ -81,7 +81,7 @@ export class UsersController {
 		return await this.usersService.getWishlist(sbUser.id);
 	}
 
-	@Post('wishlist')
+	@Put('wishlist')
 	@Roles(['user', 'artist'])
 	@UseGuards(AuthGuard)
 	@HttpCode(HttpStatus.OK)

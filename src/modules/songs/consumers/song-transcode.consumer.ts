@@ -12,6 +12,9 @@ import {
 import { fileTypeFromBuffer } from 'file-type';
 import { SongFormats } from '../schemas/song.schema';
 import { SongsService } from '../songs.service';
+import {parseBuffer} from "music-metadata";
+import {file} from "tmp";
+import {Artist} from "../../artists/schemas/artist.schema";
 
 @Processor('songTranscode')
 export class SongTranscodeConsumer extends WorkerHost {
@@ -66,6 +69,17 @@ export class SongTranscodeConsumer extends WorkerHost {
 			if (code === 0) {
 				const outputBuffer = fs.readFileSync(outputFile.name);
 				const outputType = await fileTypeFromBuffer(outputBuffer);
+				try {
+					if (job.data.format === SongFormats.MP3128) {
+						const song = await this.songsService.findOneByUuidAndPopulate(job.data.uuid);
+						const fileMetadata = await parseBuffer(outputBuffer, 'audio/mpeg');
+						const duration = Math.floor(fileMetadata.format.duration || 0);
+						await this.songsService.update(job.data.uuid, { duration, author: (song.author as Artist).uuid });
+					}
+				} catch (error) {
+					console.log(error);
+				}
+
 				await this.bucketService.saveToSongFiles(
 					`${job.data.uuid}-${job.data.format}`,
 					outputBuffer,
