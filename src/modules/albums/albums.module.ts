@@ -13,7 +13,6 @@ import { SearchModule } from '../search/search.module';
 import { GenresModule } from '../genres/genres.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import { NotificationService } from '../../common/services/notification.service';
-import { UsersService } from '../users/users.service';
 import { UsersModule } from '../users/users.module';
 
 @Module({
@@ -22,7 +21,7 @@ import { UsersModule } from '../users/users.module';
 		CacheModule.register(),
 		forwardRef(() => SongsModule),
 		HttpModule,
-		ArtistsModule,
+        forwardRef(() => ArtistsModule),
 		forwardRef(() => SearchModule),
 		GenresModule,
 		forwardRef(() => UsersModule),

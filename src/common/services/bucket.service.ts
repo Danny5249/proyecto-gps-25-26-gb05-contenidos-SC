@@ -125,4 +125,24 @@ export class BucketService {
 
 		return response.Body;
 	}
+
+    async saveToArtistProfiles(uuid: string, img: Express.Multer.File) {
+        const command = new PutObjectCommand({
+            Bucket: 'artist-profiles',
+            Key: uuid,
+            Body: img.buffer,
+            ContentType: img.mimetype,
+        });
+        await this.s3.send(command);
+    }
+
+    async saveToArtistBanners(uuid: string, img: Express.Multer.File) {
+        const command = new PutObjectCommand({
+            Bucket: 'artist-banners',
+            Key: uuid,
+            Body: img.buffer,
+            ContentType: img.mimetype,
+        });
+        await this.s3.send(command);
+    }
 }

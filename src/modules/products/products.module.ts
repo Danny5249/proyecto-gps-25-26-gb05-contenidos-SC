@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import {forwardRef, Module} from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Product, ProductSchema } from './schemas/product.schema';
 import { ProductsService } from './products.service';
@@ -11,6 +11,7 @@ import { BucketService } from '../../common/services/bucket.service';
 import { SongsModule } from '../songs/songs.module';
 import { AlbumsModule } from '../albums/albums.module';
 import { CacheModule } from '@nestjs/cache-manager';
+import { ArtistsModule } from "../artists/artists.module";
 
 @Module({
 	imports: [
@@ -20,8 +21,9 @@ import { CacheModule } from '@nestjs/cache-manager';
 			name: 'productPreview',
 		}),
 		HttpModule,
-		SongsModule,
+        forwardRef(() => SongsModule),
 		AlbumsModule,
+        forwardRef(() => ArtistsModule),
 	],
 	controllers: [ProductsController],
 	providers: [
