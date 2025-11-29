@@ -22,22 +22,11 @@ export class ProductsService {
 		@InjectQueue('productPreview') private productPreviewQueue: Queue,
 		private readonly songsService: SongsService,
 		private readonly albumsService: AlbumsService,
+        private readonly artistsService: ArtistsService,
 	) {}
 
 	async findAll(): Promise<Product[]> {
 		return this.productModel.find();
-	}
-
-	async findByAuthorUuid(uuid: string): Promise<Product[]> {
-		const songs = await this.songsService.findByAuthorUuid(uuid);
-		const albums = await this.albumsService.findByAuthorUuid(uuid);
-
-		return this.productModel.find({
-			$or: [
-				{ reference: { $in: songs.map(s => s._id) }, refPath: 'Song' },
-				{ reference: { $in: albums.map(a => a._id) }, refPath: 'Album' }
-			]
-		})
 	}
 
 	async findOneByUuid(uuid: string): Promise<Product> {
@@ -97,6 +86,17 @@ export class ProductsService {
 
 		return product;
 	}
+
+    async findByAuthorUuid(authorUuid: string): Promise<Product[]> {
+        const artist = await this.artistsService.findOneByUuid(authorUuid);
+        return this.productModel
+            .find()
+            .populate({
+                path: 'reference',
+                match: { author: artist._id },
+            })
+            .then(products => products.filter(p => p.reference));
+    }
 
 	async create(createProductDto: CreateProductDto): Promise<Product> {
 		let reference: Types.ObjectId = new Types.ObjectId();

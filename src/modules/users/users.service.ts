@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {forwardRef, Inject, Injectable, NotFoundException} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import {User, WishlistItem} from './schemas/user.schema';
 import {Model, Promise, Types} from 'mongoose';
@@ -26,6 +26,7 @@ import {Product} from "../products/schemas/product.schema";
 export class UsersService {
 	constructor(
 		@InjectModel(User.name) private userModel: Model<User>,
+        @Inject(forwardRef(() => SongsService))
 		private readonly songsService: SongsService,
 		private readonly albumsService: AlbumsService,
 		private readonly productsService: ProductsService,

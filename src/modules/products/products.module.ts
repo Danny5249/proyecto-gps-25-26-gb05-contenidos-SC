@@ -11,6 +11,7 @@ import { BucketService } from '../../common/services/bucket.service';
 import { SongsModule } from '../songs/songs.module';
 import { AlbumsModule } from '../albums/albums.module';
 import { CacheModule } from '@nestjs/cache-manager';
+import {ArtistsModule} from "../artists/artists.module";
 
 @Module({
 	imports: [
@@ -20,6 +21,7 @@ import { CacheModule } from '@nestjs/cache-manager';
 			name: 'productPreview',
 		}),
 		HttpModule,
+        forwardRef(() => ArtistsModule),
 		forwardRef(() => SongsModule),
 		forwardRef(() => AlbumsModule),
 	],
