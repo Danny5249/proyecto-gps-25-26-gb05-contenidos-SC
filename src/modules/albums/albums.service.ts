@@ -1,8 +1,10 @@
 import {
-	Injectable,
-	InternalServerErrorException,
-	NotFoundException,
-	UnauthorizedException,
+    forwardRef,
+    Inject,
+    Injectable,
+    InternalServerErrorException,
+    NotFoundException,
+    UnauthorizedException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Album } from './schemas/album.schema';
@@ -18,7 +20,9 @@ import { GenresService } from '../genres/genres.service';
 export class AlbumsService {
 	constructor(
 		@InjectModel(Album.name) private albumModel: Model<Album>,
-		private readonly songsService: SongsService,
+        @Inject(forwardRef(() => SongsService))
+        private readonly songsService: SongsService,
+        @Inject(forwardRef(() => ArtistsService))
 		private readonly artistsService: ArtistsService,
 		private readonly genresService: GenresService,
 		private readonly elasticsearchSyncService: ElasticsearchSyncService,

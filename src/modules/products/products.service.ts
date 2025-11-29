@@ -13,6 +13,7 @@ import { SongsService } from '../songs/songs.service';
 import { AlbumsService } from '../albums/albums.service';
 import { Artist } from '../artists/schemas/artist.schema';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { ArtistsService } from "../artists/artists.service";
 
 @Injectable()
 export class ProductsService {
@@ -21,6 +22,7 @@ export class ProductsService {
 		@InjectQueue('productPreview') private productPreviewQueue: Queue,
 		private readonly songsService: SongsService,
 		private readonly albumsService: AlbumsService,
+        private readonly artistsService: ArtistsService,
 	) {}
 
 	async findAll(): Promise<Product[]> {
@@ -58,6 +60,17 @@ export class ProductsService {
 
 		return product;
 	}
+
+    async findByAuthorUuid(authorUuid: string): Promise<Product[]> {
+        const artist = await this.artistsService.findOneByUuid(authorUuid);
+        return this.productModel
+            .find()
+            .populate({
+                path: 'reference',
+                match: { author: artist._id },
+            })
+            .then(products => products.filter(p => p.reference));
+    }
 
 	async create(createProductDto: CreateProductDto): Promise<Product> {
 		let reference: Types.ObjectId = new Types.ObjectId();
