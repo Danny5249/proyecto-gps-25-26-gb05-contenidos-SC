@@ -1,4 +1,4 @@
-import {forwardRef, Inject, Injectable, NotFoundException} from '@nestjs/common';
+import {BadRequestException, forwardRef, Inject, Injectable, NotFoundException} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import {User, WishlistItem} from './schemas/user.schema';
 import {Model, Promise, Types} from 'mongoose';
@@ -121,6 +121,12 @@ export class UsersService {
 
 	async findOneByUuidAndPopulateLibrary(uuid: string) {
 		const user = await this.userModel.findOne({ uuid }).populate('playlists');
+		if (!user) throw NotFoundException;
+		return user;
+	}
+
+	async findOneByUuidAndPopulateFollowing(uuid: string) {
+		const user = await this.userModel.findOne({ uuid }).populate('following');
 		if (!user) throw NotFoundException;
 		return user;
 	}
@@ -261,5 +267,24 @@ export class UsersService {
 		const userWithWishlist = await user.populate('wishlist.item');
 		const newWishlist = userWithWishlist.wishlist.filter(i => (i.item as Song).uuid !== itemUuid);
 		await this.userModel.findByIdAndUpdate(user._id, { wishlist: newWishlist });
+	}
+
+	async follow(userId: Types.ObjectId, artistId: Types.ObjectId) {
+		const user = await this.userModel.findById(userId);
+		if (!user) throw new NotFoundException();
+
+		if (user.following.some(item => item.toString() === artistId.toString())) {
+			throw new BadRequestException();
+		}
+
+		user.following.push(artistId as any);
+		await user.save();
+	}
+
+	async unfollow(userId: Types.ObjectId, artistId: Types.ObjectId) {
+		const user = await this.userModel.findById(userId);
+		if (!user) throw new NotFoundException();
+		user.following = (user.following.filter(item => item.toString() !== artistId.toString()) as any);
+		await user.save();
 	}
 }

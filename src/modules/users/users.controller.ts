@@ -22,6 +22,7 @@ import { UpdateLibraryDto } from './dto/update-library.dto';
 import { Playlist } from '../playlists/schemas/playlist.schema';
 import { Notification } from '../../common/schemas/notification.schema';
 import {AddToWishlistDto} from "./dto/add-to-wishlist.dto";
+import {Artist} from "../artists/schemas/artist.schema";
 
 @Controller('users')
 export class UsersController {
@@ -50,6 +51,15 @@ export class UsersController {
 	async getUserPlaylist(@SupabaseUser() sbUser: SbUser) {
 		return (await this.usersService.findOneByUuidAndPopulateLibrary(sbUser.id))
 			.playlists as Playlist[];
+	}
+
+	@Get('following')
+	@Roles(['user', 'artist'])
+	@UseGuards(AuthGuard)
+	@HttpCode(HttpStatus.OK)
+	async getUserFollowing(@SupabaseUser() sbUser: SbUser) {
+		return (await this.usersService.findOneByUuidAndPopulateFollowing(sbUser.id))
+			.following as Artist[];
 	}
 
 	@Delete('notifications/:uuid')

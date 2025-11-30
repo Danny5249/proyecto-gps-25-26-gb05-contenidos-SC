@@ -1,4 +1,5 @@
 import {
+	forwardRef, Inject,
 	Injectable,
 	NotFoundException,
 	UnauthorizedException,
@@ -20,8 +21,10 @@ export class ProductsService {
 	constructor(
 		@InjectModel(Product.name) private productModel: Model<Product>,
 		@InjectQueue('productPreview') private productPreviewQueue: Queue,
+		@Inject(forwardRef(() => SongsService))
 		private readonly songsService: SongsService,
 		private readonly albumsService: AlbumsService,
+		@Inject(forwardRef(() => ArtistsService))
         private readonly artistsService: ArtistsService,
 	) {}
 

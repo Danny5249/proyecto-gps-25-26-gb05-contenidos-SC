@@ -101,6 +101,8 @@ export class ArtistsService {
         // Guardar ObjectId del usuario
         artist.followers.push(user._id);
 
+		await this.usersService.follow(user._id, artist._id);
+
         return artist.save();
     }
 
@@ -115,6 +117,8 @@ export class ArtistsService {
         artist.followers = artist.followers.filter(
             f => f.toString() !== user._id.toString()
         );
+
+		await this.usersService.unfollow(user._id, artist._id);
 
         return artist.save();
 

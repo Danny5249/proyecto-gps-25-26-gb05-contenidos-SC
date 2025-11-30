@@ -54,7 +54,7 @@ export const WishlistItemSchema = SchemaFactory.createForClass(WishlistItem);
 	toJSON: {
 		transform: (doc, ret) => {
 			// @ts-ignore
-			const { _id, library, ...rest } = ret;
+			const { _id, library, playlists, following, wishlist, ...rest } = ret;
 			return rest;
 		},
 	},
