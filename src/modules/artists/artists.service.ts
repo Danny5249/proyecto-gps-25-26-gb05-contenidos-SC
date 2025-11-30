@@ -51,7 +51,7 @@ export class ArtistsService {
             profileImg: artist.profileImg,
             bannerImg: artist.bannerImg,
             biography: artist.biography,
-            followers: artist.followers.length,
+            followers: artist.followers,
         };
     }
 
