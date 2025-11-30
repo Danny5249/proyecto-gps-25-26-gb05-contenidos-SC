@@ -35,6 +35,7 @@ import { Queue } from 'bullmq';
 import { NotificationService } from '../../common/services/notification.service';
 import { Notification } from '../../common/schemas/notification.schema';
 import { v4 as uuidv4 } from 'uuid';
+import {Album} from "../albums/schemas/album.schema";
 
 const validSongFormats = [
 	'audio/mpeg',
@@ -100,11 +101,21 @@ export class SongsController {
 	) {
 		const song = await this.songsService.findOneByUuidAndPopulate(uuid);
 
-		if (sbUser.role === 'user') {
-			const user = await this.usersService.findOneByUuidAndPopulate(uuid);
-			const found = user.library.some((l) => l.item._id === song._id);
-			if (!found) throw new UnauthorizedException();
-		} else if (sbUser.role === 'artist') {
+		const user = await this.usersService.findOneByUuidAndPopulate(sbUser.id);
+		const found = user.library.some((l) => {
+			if (l.type === 'song') {
+				return l.item._id.toString() === song._id.toString();
+			} else if (l.type === 'album') {
+				for (const s of (l.item as Album).songs) {
+					if (s._id.toString() === song._id.toString()) {
+						return true;
+					}
+				}
+				return false;
+			}
+		});
+		if (!found) {
+			if (sbUser.role === 'user') throw new UnauthorizedException();
 			const artist = await this.usersService.findOneByUuid(sbUser.id);
 			if (artist.uuid !== (song.author as Artist).uuid) {
 				throw new UnauthorizedException();
@@ -140,11 +151,21 @@ export class SongsController {
 	) {
 		const song = await this.songsService.findOneByUuidAndPopulate(uuid);
 
-		if (sbUser.role === 'user') {
-			const user = await this.usersService.findOneByUuidAndPopulate(uuid);
-			const found = user.library.some((l) => l.item._id === song._id);
-			if (!found) throw new UnauthorizedException();
-		} else if (sbUser.role === 'artist') {
+		const user = await this.usersService.findOneByUuidAndPopulate(sbUser.id);
+		const found = user.library.some((l) => {
+			if (l.type === 'song') {
+				return l.item._id.toString() === song._id.toString();
+			} else if (l.type === 'album') {
+				for (const s of (l.item as Album).songs) {
+					if (s._id.toString() === song._id.toString()) {
+						return true;
+					}
+				}
+				return false;
+			}
+		});
+		if (!found) {
+			if (sbUser.role === 'user') throw new UnauthorizedException();
 			const artist = await this.usersService.findOneByUuid(sbUser.id);
 			if (artist.uuid !== (song.author as Artist).uuid) {
 				throw new UnauthorizedException();

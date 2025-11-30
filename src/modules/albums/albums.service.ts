@@ -94,7 +94,7 @@ export class AlbumsService {
 			}
 
 			for (const genreId of song.genres) {
-				if (!genreIds.includes(genreId as Types.ObjectId)) {
+				if (!genreIds.some(g => g.toString() === genreId.toString())) {
 					genreIds.push(genreId as Types.ObjectId);
 				}
 			}
@@ -109,7 +109,7 @@ export class AlbumsService {
 				author: author._id,
 				songs: songIds,
 				genres: genreIds,
-				duration,
+				duration: Math.round(duration),
 			});
 			createdAlbum.cover = `${process.env.APP_BASE_URL}/static/public/album-covers/${createdAlbum.uuid}`;
 
