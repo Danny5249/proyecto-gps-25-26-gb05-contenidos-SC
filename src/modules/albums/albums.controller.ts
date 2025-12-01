@@ -10,7 +10,7 @@ import {
 	Param,
 	ParseFilePipe,
 	Post,
-	Put,
+	Put, UnauthorizedException,
 	UploadedFile,
 	UseGuards,
 	UseInterceptors,
@@ -99,7 +99,23 @@ export class AlbumsController {
 	async update(
 		@Param('uuid') uuid: string,
 		@Body() updateAlbumDto: UpdateAlbumDto,
+		@SupabaseUser() sbUser: SbUser
 	): Promise<Album> {
+		updateAlbumDto.author = sbUser.id;
 		return await this.albumsService.update(uuid, updateAlbumDto);
+	}
+
+	@Delete(':uuid')
+	@Roles(['artist'])
+	@UseGuards(AuthGuard)
+	@HttpCode(HttpStatus.OK)
+	async delete(
+		@Param('uuid') uuid: string,
+		@SupabaseUser() sbUser: SbUser
+	): Promise<void> {
+		if (!(await this.albumsService.isAuthor(sbUser.id, uuid))) {
+			throw new UnauthorizedException();
+		}
+		return await this.albumsService.deleteByUuid(uuid);
 	}
 }

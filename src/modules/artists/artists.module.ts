@@ -17,7 +17,7 @@ import { BucketService } from "../../common/services/bucket.service";
 		MongooseModule.forFeature([{ name: Artist.name, schema: ArtistSchema }]),
 		CacheModule.register(),
 		HttpModule,
-        forwardRef(() => SongsModule),
+		forwardRef(() => SongsModule),
         forwardRef(() => AlbumsModule),
         forwardRef(() => ProductsModule),
         forwardRef(() => UsersModule),

@@ -25,6 +25,14 @@ import { Artist } from '../artists/schemas/artist.schema';
 export class ProductsController {
 	constructor(private readonly productsService: ProductsService) {}
 
+	@Get()
+	@Roles(['artist'])
+	@UseGuards(AuthGuard)
+	@HttpCode(HttpStatus.OK)
+	async getProductsByArtistToken(@SupabaseUser() sbUser: SbUser) {
+		return await this.productsService.findByAuthorUuid(sbUser.id);
+	}
+
 	@Get(':uuid')
 	@HttpCode(HttpStatus.OK)
 	async getProductByUuid(@Param('uuid') uuid: string) {

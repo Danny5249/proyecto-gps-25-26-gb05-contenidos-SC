@@ -27,9 +27,15 @@ services:
 
       ELASTICSEARCH_HOST: http://contenidos-elasticsearch:9200
 
+      BULLMQ_REDIS_HOST: "contenidos-redis"
+      BULLMQ_REDIS_PORT: 6379
+
+      MAIL_APP_PASSWORD: ${MAIL_APP_PASSWORD}
+      APP_BASE_URL: "http://localhost:9080"
     depends_on:
       - contenidos-mongodb
       - contenidos-storage
+      - contenidos-redis
       - contenidos-elasticsearch
     ports:
       - "${PORT}:${PORT}"
@@ -109,6 +115,8 @@ services:
     command: redis-server --save 20 1 --loglevel warning
     volumes:
       - contenidos-redis:/data
+    networks:
+      contenidos:
 
 
 volumes:

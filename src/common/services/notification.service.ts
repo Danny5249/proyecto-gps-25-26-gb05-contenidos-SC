@@ -13,10 +13,12 @@ export class NotificationService {
 
 	async notifyFollowers(artistUuid: string, notification: Notification) {
 		const artist = await this.artistService.findOneByUuid(artistUuid);
-		await this.userService.addNotification(
-			artist.followers as Types.ObjectId[],
-			notification,
-			artist,
-		);
+        if(artist.followers.length !== 0) {
+            await this.userService.addNotification(
+                artist.followers as Types.ObjectId[],
+                notification,
+                artist,
+            );
+        }
 	}
 }

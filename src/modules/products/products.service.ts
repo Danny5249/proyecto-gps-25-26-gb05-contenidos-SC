@@ -1,4 +1,5 @@
 import {
+	forwardRef, Inject,
 	Injectable,
 	NotFoundException,
 	UnauthorizedException,
@@ -13,15 +14,17 @@ import { SongsService } from '../songs/songs.service';
 import { AlbumsService } from '../albums/albums.service';
 import { Artist } from '../artists/schemas/artist.schema';
 import { UpdateProductDto } from './dto/update-product.dto';
-import { ArtistsService } from "../artists/artists.service";
+import {ArtistsService} from "../artists/artists.service";
 
 @Injectable()
 export class ProductsService {
 	constructor(
 		@InjectModel(Product.name) private productModel: Model<Product>,
 		@InjectQueue('productPreview') private productPreviewQueue: Queue,
+		@Inject(forwardRef(() => SongsService))
 		private readonly songsService: SongsService,
 		private readonly albumsService: AlbumsService,
+		@Inject(forwardRef(() => ArtistsService))
         private readonly artistsService: ArtistsService,
 	) {}
 
@@ -32,6 +35,32 @@ export class ProductsService {
 	async findOneByUuid(uuid: string): Promise<Product> {
 		const product = await this.productModel.findOne({ uuid });
 		if (!product) throw new NotFoundException();
+		return product;
+	}
+
+	async findOneByIdAndPopulate(id: Types.ObjectId): Promise<Product> {
+		let product = await this.productModel.findById(id);
+		if (!product) throw new NotFoundException();
+
+		if (product.referenceType === 'song') {
+			product = await product.populate({
+				path: 'reference',
+				populate: [{ path: 'author' }, { path: 'genres' }, { path: 'featuring' }],
+			});
+		} else if (product.referenceType === 'album') {
+			product = await product.populate({
+				path: 'reference',
+				populate: [
+					{ path: 'author' },
+					{ path: 'genres' },
+					{
+						path: 'songs',
+						populate: [{ path: 'author' }, { path: 'featuring' }, { path: 'genres' }],
+					},
+				],
+			});
+		}
+
 		return product;
 	}
 

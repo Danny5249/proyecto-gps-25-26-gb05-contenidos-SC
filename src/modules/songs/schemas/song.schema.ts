@@ -58,6 +58,9 @@ export class Song {
 
 	@Prop({ type: [String], default: [] })
 	formats: SongFormats[];
+
+    @Prop({default: 0})
+    plays: number;
 }
 
 export const SongSchema = SchemaFactory.createForClass(Song);

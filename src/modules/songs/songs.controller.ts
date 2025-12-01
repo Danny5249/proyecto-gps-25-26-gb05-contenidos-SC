@@ -35,6 +35,7 @@ import { Queue } from 'bullmq';
 import { NotificationService } from '../../common/services/notification.service';
 import { Notification } from '../../common/schemas/notification.schema';
 import { v4 as uuidv4 } from 'uuid';
+import {Album} from "../albums/schemas/album.schema";
 
 const validSongFormats = [
 	'audio/mpeg',
@@ -100,11 +101,21 @@ export class SongsController {
 	) {
 		const song = await this.songsService.findOneByUuidAndPopulate(uuid);
 
-		if (sbUser.role === 'user') {
-			const user = await this.usersService.findOneByUuidAndPopulate(uuid);
-			const found = user.library.some((l) => l.item._id === song._id);
-			if (!found) throw new UnauthorizedException();
-		} else if (sbUser.role === 'artist') {
+		const user = await this.usersService.findOneByUuidAndPopulate(sbUser.id);
+		const found = user.library.some((l) => {
+			if (l.type === 'Song') {
+				return l.item._id.toString() === song._id.toString();
+			} else if (l.type === 'Album') {
+				for (const s of (l.item as Album).songs) {
+					if (s._id.toString() === song._id.toString()) {
+						return true;
+					}
+				}
+				return false;
+			}
+		});
+		if (!found) {
+			if (sbUser.role === 'user') throw new UnauthorizedException();
 			const artist = await this.usersService.findOneByUuid(sbUser.id);
 			if (artist.uuid !== (song.author as Artist).uuid) {
 				throw new UnauthorizedException();
@@ -113,6 +124,8 @@ export class SongsController {
 		const fileStream = await this.bucketService.getFromSongFilesAsStream(
 			`${uuid}-mp3-128`,
 		);
+
+        await this.songsService.incrementPlays(uuid)
 
 		res.set({
 			'Content-Type': 'audio/mpeg',
@@ -138,11 +151,21 @@ export class SongsController {
 	) {
 		const song = await this.songsService.findOneByUuidAndPopulate(uuid);
 
-		if (sbUser.role === 'user') {
-			const user = await this.usersService.findOneByUuidAndPopulate(uuid);
-			const found = user.library.some((l) => l.item._id === song._id);
-			if (!found) throw new UnauthorizedException();
-		} else if (sbUser.role === 'artist') {
+		const user = await this.usersService.findOneByUuidAndPopulate(sbUser.id);
+		const found = user.library.some((l) => {
+			if (l.type === 'Song') {
+				return l.item._id.toString() === song._id.toString();
+			} else if (l.type === 'Album') {
+				for (const s of (l.item as Album).songs) {
+					if (s._id.toString() === song._id.toString()) {
+						return true;
+					}
+				}
+				return false;
+			}
+		});
+		if (!found) {
+			if (sbUser.role === 'user') throw new UnauthorizedException();
 			const artist = await this.usersService.findOneByUuid(sbUser.id);
 			if (artist.uuid !== (song.author as Artist).uuid) {
 				throw new UnauthorizedException();
@@ -270,7 +293,9 @@ export class SongsController {
 	async update(
 		@Param('uuid') uuid: string,
 		@Body() updateSongDto: UpdateSongDto,
+		@SupabaseUser() sbUser: SbUser
 	): Promise<Song> {
+		updateSongDto.author = sbUser.id;
 		return await this.songsService.update(uuid, updateSongDto);
 	}
 
@@ -278,7 +303,13 @@ export class SongsController {
 	@Roles(['artist'])
 	@UseGuards(AuthGuard)
 	@HttpCode(HttpStatus.OK)
-	async deleteFromUuid(@Param('uuid') uuid: string): Promise<void> {
+	async deleteFromUuid(
+		@Param('uuid') uuid: string,
+		@SupabaseUser() sbUser: SbUser
+	): Promise<void> {
+		if (!(await this.songsService.isAuthor(sbUser.id, uuid))) {
+			throw new UnauthorizedException();
+		}
 		return await this.songsService.deleteByUuid(uuid);
 	}
 }

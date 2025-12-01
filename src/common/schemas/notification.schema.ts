@@ -9,7 +9,7 @@ export class Notification {
 	@Prop({ required: true })
 	uuid: string;
 
-	@Prop({ unique: true, required: true })
+	@Prop({ unique: false, required: true, sparse: true, default:""})
 	message: string;
 
 	@Prop({ required: false, enum: ['Song', 'Album'] })
