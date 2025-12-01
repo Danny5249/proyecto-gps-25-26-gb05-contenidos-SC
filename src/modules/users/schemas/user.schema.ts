@@ -82,7 +82,7 @@ export class User {
 	@Prop({ type: [LibraryItemSchema] })
 	library: LibraryItem[];
 
-	@Prop({ type: [Notification] })
+	@Prop({ type: [Notification], default:[] })
 	notifications: Notification[];
 
 	@Prop({ type: [WishlistItemSchema], default: [] })

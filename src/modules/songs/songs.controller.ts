@@ -103,9 +103,9 @@ export class SongsController {
 
 		const user = await this.usersService.findOneByUuidAndPopulate(sbUser.id);
 		const found = user.library.some((l) => {
-			if (l.type === 'song') {
+			if (l.type === 'Song') {
 				return l.item._id.toString() === song._id.toString();
-			} else if (l.type === 'album') {
+			} else if (l.type === 'Album') {
 				for (const s of (l.item as Album).songs) {
 					if (s._id.toString() === song._id.toString()) {
 						return true;
@@ -153,9 +153,9 @@ export class SongsController {
 
 		const user = await this.usersService.findOneByUuidAndPopulate(sbUser.id);
 		const found = user.library.some((l) => {
-			if (l.type === 'song') {
+			if (l.type === 'Song') {
 				return l.item._id.toString() === song._id.toString();
-			} else if (l.type === 'album') {
+			} else if (l.type === 'Album') {
 				for (const s of (l.item as Album).songs) {
 					if (s._id.toString() === song._id.toString()) {
 						return true;
