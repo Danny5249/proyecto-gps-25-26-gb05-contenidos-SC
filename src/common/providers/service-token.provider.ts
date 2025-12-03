@@ -14,15 +14,15 @@ export class ServiceTokenProvider {
 	private password: string = process.env.SERVICE_AUTH_PASSWORD!;
 	private tokenData: TokenData;
 
-	constructor() {
-		this.refreshToken();
-	}
+	constructor() {}
 
 	async getToken(): Promise<string> {
-		if (this.isTokenExpiring()) {
+		if(!this.tokenData) await this.refreshToken();
+
+		if(this.isTokenExpiring()){
 			await this.refreshToken();
 		}
-		return this.tokenData.accessToken;
+		return this.tokenData!.accessToken;
 	}
 
 	async refreshToken(): Promise<void> {
