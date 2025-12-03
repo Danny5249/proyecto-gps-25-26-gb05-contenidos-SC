@@ -20,7 +20,7 @@ import { ReviewsModule } from './modules/reviews/reviews.module';
 		BullModule.forRoot({
 			connection: {
 				host: process.env.BULLMQ_REDIS_HOST,
-				port: parseInt(process.env.BULLMQ_REDIS_PORT!),
+				port: Number.parseInt(process.env.BULLMQ_REDIS_PORT!),
 			},
 		}),
 		GenresModule,
