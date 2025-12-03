@@ -19,7 +19,7 @@ import { type Cache } from 'cache-manager';
 @Injectable()
 export class AuthGuard implements CanActivate {
 	constructor(
-		private reflector: Reflector,
+		private readonly reflector: Reflector,
 		private httpService: HttpService,
 		private readonly serviceTokenProvider: ServiceTokenProvider,
 		@Inject(CACHE_MANAGER) private cacheManager: Cache,
